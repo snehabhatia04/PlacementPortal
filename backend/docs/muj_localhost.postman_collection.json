@@ -1,0 +1,266 @@
+{
+    "info": {
+        "name": "MUJ Placement Portal - Localhost",
+        "_postman_id": "a-unique-id",
+        "description": "API collection for MUJ Placement Portal running on localhost",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "item": [
+        {
+            "name": "Admin Login",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n    \"email\": \"admin@muj.ac.in\",\n    \"password\": \"admin123\"\n}"
+                },
+                "url": {
+                    "raw": "http://localhost:8080/admin/login",
+                    "host": [
+                        "localhost"
+                    ],
+                    "port": "8080",
+                    "path": [
+                        "admin",
+                        "login"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "Admin Logout",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer <token>"
+                    }
+                ],
+                "url": {
+                    "raw": "http://localhost:8080/admin/logout",
+                    "host": [
+                        "localhost"
+                    ],
+                    "port": "8080",
+                    "path": [
+                        "admin",
+                        "logout"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "Faculty Login",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n    \"email\": \"faculty@muj.ac.in\",\n    \"password\": \"faculty123\"\n}"
+                },
+                "url": {
+                    "raw": "http://localhost:8080/faculty/login",
+                    "host": [
+                        "localhost"
+                    ],
+                    "port": "8080",
+                    "path": [
+                        "faculty",
+                        "login"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "Faculty Logout",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer <token>"
+                    }
+                ],
+                "url": {
+                    "raw": "http://localhost:8080/faculty/logout",
+                    "host": [
+                        "localhost"
+                    ],
+                    "port": "8080",
+                    "path": [
+                        "faculty",
+                        "logout"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "Admin - Get All Students",
+            "request": {
+                "method": "GET",
+                "header": [
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer <token>"
+                    }
+                ],
+                "url": {
+                    "raw": "http://localhost:8080/admin/students",
+                    "host": [
+                        "localhost"
+                    ],
+                    "port": "8080",
+                    "path": [
+                        "admin",
+                        "students"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "Admin - Create Student",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer <token>"
+                    },
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n    \"name\": \"New Student\",\n    \"email\": \"new.student@muj.ac.in\",\n    \"cgpa\": 8.5,\n    \"department\": \"CSE\"\n}"
+                },
+                "url": {
+                    "raw": "http://localhost:8080/admin/students",
+                    "host": [
+                        "localhost"
+                    ],
+                    "port": "8080",
+                    "path": [
+                        "admin",
+                        "students"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "Admin - Update Student",
+            "request": {
+                "method": "PUT",
+                "header": [
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer <token>"
+                    },
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n    \"name\": \"Updated Student\",\n    \"cgpa\": 9.1\n}"
+                },
+                "url": {
+                    "raw": "http://localhost:8080/admin/students/1",
+                    "host": [
+                        "localhost"
+                    ],
+                    "port": "8080",
+                    "path": [
+                        "admin",
+                        "students",
+                        "1"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "Admin - Delete Student",
+            "request": {
+                "method": "DELETE",
+                "header": [
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer <token>"
+                    }
+                ],
+                "url": {
+                    "raw": "http://localhost:8080/admin/students/1",
+                    "host": [
+                        "localhost"
+                    ],
+                    "port": "8080",
+                    "path": [
+                        "admin",
+                        "students",
+                        "1"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "Faculty - Get All Students",
+            "request": {
+                "method": "GET",
+                "header": [
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer <token>"
+                    }
+                ],
+                "url": {
+                    "raw": "http://localhost:8080/faculty/students",
+                    "host": [
+                        "localhost"
+                    ],
+                    "port": "8080",
+                    "path": [
+                        "faculty",
+                        "students"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "Faculty - Get All Companies",
+            "request": {
+                "method": "GET",
+                "header": [
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer <token>"
+                    }
+                ],
+                "url": {
+                    "raw": "http://localhost:8080/faculty/companies",
+                    "host": [
+                        "localhost"
+                    ],
+                    "port": "8080",
+                    "path": [
+                        "faculty",
+                        "companies"
+                    ]
+                }
+            }
+        }
+    ]
+}
