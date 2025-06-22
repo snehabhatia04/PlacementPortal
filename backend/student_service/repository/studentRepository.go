@@ -1,42 +1,75 @@
-package repository
+// package repository
 
-import (
-	"Placement-Portal/pkg/model"
-	"context"
-	"fmt"
-	"log"
+// import (
+// 	"Placement-Portal/pkg/model"
+// 	"context"
+// 	"fmt"
+// 	"log"
 
-	"github.com/huandu/go-sqlbuilder"
-	"github.com/jmoiron/sqlx"
-)
+// 	"github.com/huandu/go-sqlbuilder"
+// 	"github.com/jmoiron/sqlx"
+// )
 
-type StudentRepository struct {
-    DB *sqlx.DB
-}
+// type StudentRepository struct {
+//     DB *sqlx.DB
+// }
 
-func NewStudentRepository(db *sqlx.DB) *StudentRepository {
-    return &StudentRepository{DB: db}
-}
+// func NewStudentRepository(db *sqlx.DB) *StudentRepository {
+//     return &StudentRepository{DB: db}
+// }
 
-// Fetch all students by department
+// // Fetch all students by department
+// // func (r *StudentRepository) GetAllStudents(ctx context.Context, department string) ([]model.Student, error) {
+// //     var students []model.Student
+// //     studentQuery := `
+// //         SELECT reg_no, name, email, department
+// //         FROM student
+// //     `
+// //     var args []interface{}
+// //     if strings.ToLower(department) != "admin" && strings.ToLower(department) != "all" {
+// //         studentQuery += " WHERE department = $1"
+// //         args = append(args, department)
+// //     }
+// //     log.Printf("Final query: %s, args: %+v", studentQuery, args)
+
+// //     err := r.DB.SelectContext(ctx, &students, studentQuery, args...)
+// //     if err != nil {
+// //         return nil, fmt.Errorf("error fetching students: %w", err)
+// //     }
+
+// //     for i, s := range students {
+// //         offers, err := r.getOffersForStudent(ctx, s.RegNo)
+// //         if err != nil {
+// //             return nil, err
+// //         }
+// //         students[i].Offers = offers
+// //     }
+
+// //     return students, nil
+// // }
 // func (r *StudentRepository) GetAllStudents(ctx context.Context, department string) ([]model.Student, error) {
 //     var students []model.Student
-//     studentQuery := `
-//         SELECT reg_no, name, email, department
-//         FROM student
-//     `
+
+//     studentQuery := `SELECT reg_no, name, email, department FROM student`
 //     var args []interface{}
-//     if strings.ToLower(department) != "admin" && strings.ToLower(department) != "all" {
-//         studentQuery += " WHERE department = $1"
+
+//     // if strings.ToLower(department) != "all" {
+//     //     studentQuery += " WHERE department = $1"
+//     //     args = append(args, department)
+//     // }
+//     if department != "admin" && department != "all" {
+//         studentQuery += " WHERE LOWER(department) = LOWER($1)"
 //         args = append(args, department)
 //     }
-//     log.Printf("Final query: %s, args: %+v", studentQuery, args)
+
+//     log.Printf("🌀 Final query: %s | args: %v", studentQuery, args)
 
 //     err := r.DB.SelectContext(ctx, &students, studentQuery, args...)
 //     if err != nil {
 //         return nil, fmt.Errorf("error fetching students: %w", err)
 //     }
 
+//     // Attach offers
 //     for i, s := range students {
 //         offers, err := r.getOffersForStudent(ctx, s.RegNo)
 //         if err != nil {
@@ -47,204 +80,387 @@ func NewStudentRepository(db *sqlx.DB) *StudentRepository {
 
 //     return students, nil
 // }
+
+// // Fetch student by registration number
+// func (r *StudentRepository) GetStudentByRegNo(ctx context.Context, regNo string) (*model.Student, error) {
+//     var student model.Student
+
+//     query := "SELECT reg_no, name, email, department FROM student WHERE reg_no = $1"
+//     err := r.DB.GetContext(ctx, &student, query, regNo)
+//     if err != nil {
+//         return nil, fmt.Errorf("error fetching student: %w", err)
+//     }
+
+//     student.Offers, err = r.getOffersForStudent(ctx, student.RegNo)
+//     if err != nil {
+//         return nil, err
+//     }
+
+//     return &student, nil
+// }
+
+// // Helper to fetch offers for a student
+// func (r *StudentRepository) getOffersForStudent(ctx context.Context, regNo string) ([]model.Offer, error) {
+//     var offers []model.Offer
+//     query := `
+//         SELECT company_name AS company, stipend, ppo_i AS "ppoI", ppo, i
+//         FROM company_student
+//         WHERE reg_no = $1
+//     `
+//     err := r.DB.SelectContext(ctx, &offers, query, regNo)
+//     if err != nil {
+//         return nil, fmt.Errorf("error fetching offers: %w", err)
+//     }
+//     return offers, nil
+// }
+
+// // Create student (without offers)
+// func (r *StudentRepository) CreateStudent(ctx context.Context, student *model.Student) error {
+//     query := `
+//         INSERT INTO student (reg_no, name, email, department)
+//         VALUES ($1, $2, $3, $4)
+//     `
+//     _, err := r.DB.ExecContext(ctx, query, student.RegNo, student.Name, student.Email, student.Department)
+//     if err != nil {
+//         return fmt.Errorf("error inserting student: %w", err)
+//     }
+
+//     for _, offer := range student.Offers {
+//         err := r.insertOffer(ctx, student.RegNo, student, offer)
+//         if err != nil {
+//             return err
+//         }
+//     }
+
+//     return nil
+// }
+
+// // Update student and replace offers
+// func (r *StudentRepository) UpdateStudent(ctx context.Context, student *model.Student) error {
+//     sb := sqlbuilder.NewUpdateBuilder()
+//     sb.Update("student")
+//     sb.Set(
+//         sb.Assign("name", student.Name),
+//         sb.Assign("email", student.Email),
+//         sb.Assign("department", student.Department),
+//     )
+//     sb.Where(sb.Equal("reg_no", student.RegNo))
+
+//     query, args := sb.BuildWithFlavor(sqlbuilder.PostgreSQL)
+
+//     log.Println("Executing student update query:", query)
+//     log.Println("With args:", args)
+
+//     _, err := r.DB.ExecContext(ctx, query, args...)
+//     if err != nil {
+//         return fmt.Errorf("error updating student: %w", err)
+//     }
+
+//     // Refresh offers
+//     _, err = r.DB.ExecContext(ctx, "DELETE FROM company_student WHERE reg_no = $1", student.RegNo)
+//     if err != nil {
+//         return fmt.Errorf("error clearing old offers: %w", err)
+//     }
+
+//     for _, offer := range student.Offers {
+//         err := r.insertOffer(ctx, student.RegNo, student, offer)
+//         if err != nil {
+//             return err
+//         }
+//     }
+
+//     return nil
+// }
+
+// // Insert offer helper
+// func (r *StudentRepository) insertOffer(ctx context.Context, regNo string, student *model.Student, offer model.Offer) error {
+//     query := `
+//         INSERT INTO company_student (
+//             company_name, reg_no, student_name, email,
+//             stipend, ppo_i, ppo, i, department
+//         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+//     `
+//     _, err := r.DB.ExecContext(ctx, query,
+//         offer.Company,
+//         regNo,
+//         student.Name,
+//         student.Email,
+//         offer.Stipend,
+//         offer.PPOI,
+//         offer.PPO,
+//         offer.I,
+//         student.Department,
+//     )
+//     if err != nil {
+//         return fmt.Errorf("error inserting offer for %s: %w", regNo, err)
+//     }
+//     return nil
+// }
+
+// // Delete student
+// func (r *StudentRepository) DeleteStudent(ctx context.Context, regNo string) error {
+//     _, err := r.DB.ExecContext(ctx, "DELETE FROM student WHERE reg_no = $1", regNo)
+//     if err != nil {
+//         return fmt.Errorf("error deleting student: %w", err)
+//     }
+//     return nil
+// }
+
+// // Get students by department
+// func (r *StudentRepository) GetStudentsByDepartment(ctx context.Context, dept string) ([]model.Student, error) {
+//     // 1. Get students in department
+//     studentQuery := `
+//         SELECT reg_no, name, email, department
+//         FROM student
+//         WHERE department = $1
+//     `
+//     var students []model.Student
+//     if err := r.DB.SelectContext(ctx, &students, studentQuery, dept); err != nil {
+//         return nil, fmt.Errorf("error fetching students: %w", err)
+//     }
+
+//     // 2. Map for fast lookup
+//     studentMap := make(map[string]*model.Student)
+//     for i := range students {
+//         studentMap[students[i].RegNo] = &students[i]
+//     }
+
+//     // 3. Get offers for all students in this department
+//     offerQuery := `
+//         SELECT reg_no, company_name, stipend, ppo_i, ppo, i
+//         FROM company_student
+//         WHERE department = $1
+//     `
+//     var offers []struct {
+//         RegNo    string         `db:"reg_no"`
+//         model.Offer
+//     }
+//     if err := r.DB.SelectContext(ctx, &offers, offerQuery, dept); err != nil {
+//         return nil, fmt.Errorf("error fetching offers: %w", err)
+//     }
+
+//     // 4. Attach offers to respective students
+//     for _, offer := range offers {
+//         if student, exists := studentMap[offer.RegNo]; exists {
+//             student.Offers = append(student.Offers, offer.Offer)
+//         }
+//     }
+
+//     return students, nil
+// }
+
+package repository
+
+import (
+	"Placement-Portal/pkg/model"
+	"context"
+	"fmt"
+	"log"
+	"strings"
+
+	"github.com/huandu/go-sqlbuilder"
+	"github.com/jmoiron/sqlx"
+)
+
+type StudentRepository struct {
+	DB *sqlx.DB
+}
+
+func NewStudentRepository(db *sqlx.DB) *StudentRepository {
+	return &StudentRepository{DB: db}
+}
+
+// Get all students with mapped company placements
 func (r *StudentRepository) GetAllStudents(ctx context.Context, department string) ([]model.Student, error) {
-    var students []model.Student
+	var students []model.Student
+	studentQuery := `SELECT reg_no, name, email, department FROM student`
+	var args []interface{}
 
-    studentQuery := `SELECT reg_no, name, email, department FROM student`
-    var args []interface{}
+	if strings.ToLower(department) != "admin" && strings.ToLower(department) != "all" {
+		studentQuery += " WHERE LOWER(department) = LOWER($1)"
+		args = append(args, department)
+	}
 
-    // if strings.ToLower(department) != "all" {
-    //     studentQuery += " WHERE department = $1"
-    //     args = append(args, department)
-    // }
-    if department != "admin" && department != "all" {
-        studentQuery += " WHERE LOWER(department) = LOWER($1)"
-        args = append(args, department)
-    }
+	log.Printf("🌀 Final query: %s | args: %v", studentQuery, args)
 
-    log.Printf("🌀 Final query: %s | args: %v", studentQuery, args)
+	err := r.DB.SelectContext(ctx, &students, studentQuery, args...)
+	if err != nil {
+		return nil, fmt.Errorf("error fetching students: %w", err)
+	}
 
-    err := r.DB.SelectContext(ctx, &students, studentQuery, args...)
-    if err != nil {
-        return nil, fmt.Errorf("error fetching students: %w", err)
-    }
+	// Attach mapped companies for each student
+	for i, s := range students {
+		mappings, err := r.getCompanyMappingsForStudent(ctx, s.RegNo)
+		if err != nil {
+			return nil, err
+		}
+		students[i].Companies = mappings
+	}
 
-    // Attach offers
-    for i, s := range students {
-        offers, err := r.getOffersForStudent(ctx, s.RegNo)
-        if err != nil {
-            return nil, err
-        }
-        students[i].Offers = offers
-    }
-
-    return students, nil
+	return students, nil
 }
 
-// Fetch student by registration number
+// Fetch a student by RegNo, with mapped companies
 func (r *StudentRepository) GetStudentByRegNo(ctx context.Context, regNo string) (*model.Student, error) {
-    var student model.Student
+	var student model.Student
 
-    query := "SELECT reg_no, name, email, department FROM student WHERE reg_no = $1"
-    err := r.DB.GetContext(ctx, &student, query, regNo)
-    if err != nil {
-        return nil, fmt.Errorf("error fetching student: %w", err)
-    }
+	query := "SELECT reg_no, name, email, department FROM student WHERE reg_no = $1"
+	err := r.DB.GetContext(ctx, &student, query, regNo)
+	if err != nil {
+		return nil, fmt.Errorf("error fetching student: %w", err)
+	}
 
-    student.Offers, err = r.getOffersForStudent(ctx, student.RegNo)
-    if err != nil {
-        return nil, err
-    }
+	student.Companies, err = r.getCompanyMappingsForStudent(ctx, student.RegNo)
+	if err != nil {
+		return nil, err
+	}
 
-    return &student, nil
+	return &student, nil
 }
 
-// Helper to fetch offers for a student
-func (r *StudentRepository) getOffersForStudent(ctx context.Context, regNo string) ([]model.Offer, error) {
-    var offers []model.Offer
-    query := `
-        SELECT company_name AS company, stipend, ppo_i AS "ppoI", ppo, i
-        FROM company_student
-        WHERE reg_no = $1
-    `
-    err := r.DB.SelectContext(ctx, &offers, query, regNo)
-    if err != nil {
-        return nil, fmt.Errorf("error fetching offers: %w", err)
-    }
-    return offers, nil
+// Helper: Fetch company mappings for a student
+func (r *StudentRepository) getCompanyMappingsForStudent(ctx context.Context, regNo string) ([]model.CompanyStudent, error) {
+	var mappings []model.CompanyStudent
+	query := `
+		SELECT id, company_name, stipend, package, ppo_i, ppo, i, department
+		FROM company_student
+		WHERE reg_no = $1
+	`
+	err := r.DB.SelectContext(ctx, &mappings, query, regNo)
+	if err != nil {
+		return nil, fmt.Errorf("error fetching company mappings: %w", err)
+	}
+	return mappings, nil
 }
 
-// Create student (without offers)
+// Create student record, plus optional company mappings
 func (r *StudentRepository) CreateStudent(ctx context.Context, student *model.Student) error {
-    query := `
-        INSERT INTO student (reg_no, name, email, department)
-        VALUES ($1, $2, $3, $4)
-    `
-    _, err := r.DB.ExecContext(ctx, query, student.RegNo, student.Name, student.Email, student.Department)
-    if err != nil {
-        return fmt.Errorf("error inserting student: %w", err)
-    }
+	query := `
+		INSERT INTO student (reg_no, name, email, department)
+		VALUES ($1, $2, $3, $4)
+	`
+	_, err := r.DB.ExecContext(ctx, query, student.RegNo, student.Name, student.Email, student.Department)
+	if err != nil {
+		return fmt.Errorf("error inserting student: %w", err)
+	}
 
-    for _, offer := range student.Offers {
-        err := r.insertOffer(ctx, student.RegNo, student, offer)
-        if err != nil {
-            return err
-        }
-    }
+	for _, mapping := range student.Companies {
+		err := r.insertCompanyMapping(ctx, student.RegNo, student, mapping)
+		if err != nil {
+			return err
+		}
+	}
 
-    return nil
+	return nil
 }
 
-// Update student and replace offers
+// Update student record and replace all company mappings
 func (r *StudentRepository) UpdateStudent(ctx context.Context, student *model.Student) error {
-    sb := sqlbuilder.NewUpdateBuilder()
-    sb.Update("student")
-    sb.Set(
-        sb.Assign("name", student.Name),
-        sb.Assign("email", student.Email),
-        sb.Assign("department", student.Department),
-    )
-    sb.Where(sb.Equal("reg_no", student.RegNo))
+	sb := sqlbuilder.NewUpdateBuilder()
+	sb.Update("student")
+	sb.Set(
+		sb.Assign("name", student.Name),
+		sb.Assign("email", student.Email),
+		sb.Assign("department", student.Department),
+	)
+	sb.Where(sb.Equal("reg_no", student.RegNo))
 
-    query, args := sb.BuildWithFlavor(sqlbuilder.PostgreSQL)
+	query, args := sb.BuildWithFlavor(sqlbuilder.PostgreSQL)
 
-    log.Println("Executing student update query:", query)
-    log.Println("With args:", args)
+	log.Println("Updating student query:", query)
+	log.Println("Args:", args)
 
-    _, err := r.DB.ExecContext(ctx, query, args...)
-    if err != nil {
-        return fmt.Errorf("error updating student: %w", err)
-    }
+	_, err := r.DB.ExecContext(ctx, query, args...)
+	if err != nil {
+		return fmt.Errorf("error updating student: %w", err)
+	}
 
-    // Refresh offers
-    _, err = r.DB.ExecContext(ctx, "DELETE FROM company_student WHERE reg_no = $1", student.RegNo)
-    if err != nil {
-        return fmt.Errorf("error clearing old offers: %w", err)
-    }
+	// Clear existing company mappings
+	_, err = r.DB.ExecContext(ctx, "DELETE FROM company_student WHERE reg_no = $1", student.RegNo)
+	if err != nil {
+		return fmt.Errorf("error clearing old mappings: %w", err)
+	}
 
-    for _, offer := range student.Offers {
-        err := r.insertOffer(ctx, student.RegNo, student, offer)
-        if err != nil {
-            return err
-        }
-    }
+	for _, mapping := range student.Companies {
+		err := r.insertCompanyMapping(ctx, student.RegNo, student, mapping)
+		if err != nil {
+			return err
+		}
+	}
 
-    return nil
+	return nil
 }
 
-// Insert offer helper
-func (r *StudentRepository) insertOffer(ctx context.Context, regNo string, student *model.Student, offer model.Offer) error {
-    query := `
-        INSERT INTO company_student (
-            company_name, reg_no, student_name, email,
-            stipend, ppo_i, ppo, i, department
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-    `
-    _, err := r.DB.ExecContext(ctx, query,
-        offer.Company,
-        regNo,
-        student.Name,
-        student.Email,
-        offer.Stipend,
-        offer.PPOI,
-        offer.PPO,
-        offer.I,
-        student.Department,
-    )
-    if err != nil {
-        return fmt.Errorf("error inserting offer for %s: %w", regNo, err)
-    }
-    return nil
+// Insert a company mapping for a student
+func (r *StudentRepository) insertCompanyMapping(ctx context.Context, regNo string, student *model.Student, mapping model.CompanyStudent) error {
+	query := `
+		INSERT INTO company_student
+			(company_name, reg_no, student_name, email, stipend, package, ppo_i, ppo, i, department)
+		VALUES
+			($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+	`
+	_, err := r.DB.ExecContext(ctx, query,
+		mapping.CompanyName,
+		regNo,
+		student.Name,
+		student.Email,
+		mapping.Stipend,
+		mapping.Package,
+		mapping.PPOI,
+		mapping.PPO,
+		mapping.I,
+		student.Department,
+	)
+	if err != nil {
+		return fmt.Errorf("error inserting company mapping for %s: %w", regNo, err)
+	}
+	return nil
 }
 
-// Delete student
+// Delete a student
 func (r *StudentRepository) DeleteStudent(ctx context.Context, regNo string) error {
-    _, err := r.DB.ExecContext(ctx, "DELETE FROM student WHERE reg_no = $1", regNo)
-    if err != nil {
-        return fmt.Errorf("error deleting student: %w", err)
-    }
-    return nil
+	_, err := r.DB.ExecContext(ctx, "DELETE FROM student WHERE reg_no = $1", regNo)
+	if err != nil {
+		return fmt.Errorf("error deleting student: %w", err)
+	}
+	return nil
 }
 
-// Get students by department
+// Fetch all students within a department with their company mappings
 func (r *StudentRepository) GetStudentsByDepartment(ctx context.Context, dept string) ([]model.Student, error) {
-    // 1. Get students in department
-    studentQuery := `
-        SELECT reg_no, name, email, department
-        FROM student
-        WHERE department = $1
-    `
-    var students []model.Student
-    if err := r.DB.SelectContext(ctx, &students, studentQuery, dept); err != nil {
-        return nil, fmt.Errorf("error fetching students: %w", err)
-    }
+	var students []model.Student
+	studentQuery := `
+		SELECT reg_no, name, email, department
+		FROM student
+		WHERE department = $1
+	`
+	if err := r.DB.SelectContext(ctx, &students, studentQuery, dept); err != nil {
+		return nil, fmt.Errorf("error fetching students: %w", err)
+	}
 
-    // 2. Map for fast lookup
-    studentMap := make(map[string]*model.Student)
-    for i := range students {
-        studentMap[students[i].RegNo] = &students[i]
-    }
+	studentMap := make(map[string]*model.Student)
+	for i := range students {
+		studentMap[students[i].RegNo] = &students[i]
+	}
 
-    // 3. Get offers for all students in this department
-    offerQuery := `
-        SELECT reg_no, company_name, stipend, ppo_i, ppo, i
-        FROM company_student
-        WHERE department = $1
-    `
-    var offers []struct {
-        RegNo    string         `db:"reg_no"`
-        model.Offer
-    }
-    if err := r.DB.SelectContext(ctx, &offers, offerQuery, dept); err != nil {
-        return nil, fmt.Errorf("error fetching offers: %w", err)
-    }
+	mappingQuery := `
+		SELECT reg_no, company_name, stipend, package, ppo_i, ppo, i, department
+		FROM company_student
+		WHERE department = $1
+	`
+	var mappings []struct {
+		RegNo string `db:"reg_no"`
+		model.CompanyStudent
+	}
+	if err := r.DB.SelectContext(ctx, &mappings, mappingQuery, dept); err != nil {
+		return nil, fmt.Errorf("error fetching company mappings: %w", err)
+	}
 
-    // 4. Attach offers to respective students
-    for _, offer := range offers {
-        if student, exists := studentMap[offer.RegNo]; exists {
-            student.Offers = append(student.Offers, offer.Offer)
-        }
-    }
+	for _, m := range mappings {
+		if student, exists := studentMap[m.RegNo]; exists {
+			student.Companies = append(student.Companies, m.CompanyStudent)
+		}
+	}
 
-    return students, nil
+	return students, nil
 }

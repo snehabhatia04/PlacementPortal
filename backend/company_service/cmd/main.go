@@ -6,6 +6,7 @@ import (
 	"Placement-Portal/company_service/config"
 	"Placement-Portal/company_service/controller"
 	"Placement-Portal/company_service/repository"
+	"Placement-Portal/pkg/constants"
 	"Placement-Portal/pkg/middleware"
 	studentRepo "Placement-Portal/student_service/repository"
 
@@ -30,22 +31,45 @@ func main() {
 	companyRepo := repository.NewCompanyRepository(db, studentRepo.NewStudentRepository(db))
 	companyController := controller.NewCompanyController(companyRepo)
 
-
 	// Set up Gin router
 	router := gin.Default()
 	router.Use(middleware.CorsHandlerMiddleware())
 
-	// Company routes
+	// Protected company routes — JWT auth required
 	companyRoutes := router.Group("/companies")
+	companyRoutes.Use(middleware.AuthMiddleware(cfg.JwtSecretKey, "")) // all roles can access
 	{
-		companyRoutes.POST("/", companyController.CreateCompany)
-		companyRoutes.GET("/", companyController.GetAllCompanies)
-		companyRoutes.POST("/:name/students", companyController.AddStudentsToCompany)
-		companyRoutes.GET("/:name/students", companyController.GetStudentsByCompany)
-		companyRoutes.DELETE("/:name/students", companyController.DeleteStudentsFromCompany)
-		companyRoutes.GET("/:name", companyController.GetCompanyByName)
-		companyRoutes.PUT("/:name", companyController.UpdateCompany)
-		companyRoutes.DELETE("/:name", companyController.DeleteCompany)
+		companyRoutes.POST("/",
+			middleware.PermissionMiddleware("create_company"),
+			companyController.CreateCompany)
+
+		companyRoutes.GET("/",
+			middleware.PermissionMiddleware(constants.PermissionViewCompanies),
+			companyController.GetAllCompanies)
+
+		companyRoutes.POST("/:name/students",
+			middleware.PermissionMiddleware("manage_company_students"),
+			companyController.AddStudentsToCompany)
+
+		companyRoutes.GET("/:name/students",
+			middleware.PermissionMiddleware(constants.PermissionViewCompanywiseStudents),
+			companyController.GetStudentsByCompany)
+
+		companyRoutes.DELETE("/:name/students",
+			middleware.PermissionMiddleware("manage_company_students"),
+			companyController.DeleteStudentsFromCompany)
+
+		companyRoutes.GET("/:name",
+			middleware.PermissionMiddleware(constants.PermissionViewCompanies),
+			companyController.GetCompanyByName)
+
+		companyRoutes.PUT("/:name",
+			middleware.PermissionMiddleware("update_company"),
+			companyController.UpdateCompany)
+
+		companyRoutes.DELETE("/:name",
+			middleware.PermissionMiddleware("delete_company"),
+			companyController.DeleteCompany)
 	}
 
 	// Start server

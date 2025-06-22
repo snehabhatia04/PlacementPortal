@@ -29,69 +29,90 @@ func IsTokenBlacklisted(token string) bool {
 	return blacklistedTokens[token]
 }
 
-func AuthMiddleware(jwtSecretKey string, role string) gin.HandlerFunc {
-    return func(c *gin.Context) {
-        log.Println("Inside AuthMiddleware")
-        log.Println("MIDDLEWARE SECRET:", jwtSecretKey)
-        log.Println("MIDDLEWARE ROLE:", role)
+func AuthMiddleware(jwtSecretKey string, requiredRole string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		log.Println("Inside AuthMiddleware")
+		log.Println("MIDDLEWARE SECRET:", jwtSecretKey)
+		log.Println("MIDDLEWARE ROLE:", requiredRole)
 
-        tokenString := c.GetHeader("Authorization")
-        if tokenString == "" {
-            log.Println("No token provided")
-            c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization token required"})
-            c.Abort()
-            return
-        }
+		tokenString := c.GetHeader("Authorization")
+		if tokenString == "" {
+			log.Println("No token provided")
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization token required"})
+			c.Abort()
+			return
+		}
 
-        log.Println("Raw Token:", tokenString)
+		log.Println("Raw Token:", tokenString)
 
-        tokenString = strings.TrimPrefix(tokenString, "Bearer ")
-        if IsTokenBlacklisted(tokenString) {
-            log.Println("Token is blacklisted")
-            c.JSON(http.StatusUnauthorized, gin.H{"error": "Token has been invalidated"})
-            c.Abort()
-            return
-        }
+		tokenString = strings.TrimPrefix(tokenString, "Bearer ")
+		if IsTokenBlacklisted(tokenString) {
+			log.Println("Token is blacklisted")
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Token has been invalidated"})
+			c.Abort()
+			return
+		}
 
-        token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-            return []byte(jwtSecretKey), nil
-        })
+		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+			return []byte(jwtSecretKey), nil
+		})
 
-        if err != nil || !token.Valid {
-            log.Println("Invalid token:", err)
-            c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
-            c.Abort()
-            return
-        }
+		if err != nil || !token.Valid {
+			log.Println("Invalid token:", err)
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
+			c.Abort()
+			return
+		}
 
-        claims, ok := token.Claims.(jwt.MapClaims)
-        if !ok {
-            log.Println("Token claims parsing failed")
-            c.JSON(http.StatusForbidden, gin.H{"error": "Access denied"})
-            c.Abort()
-            return
-        }
+		claims, ok := token.Claims.(jwt.MapClaims)
+		if !ok {
+			log.Println("Token claims parsing failed")
+			c.JSON(http.StatusForbidden, gin.H{"error": "Access denied"})
+			c.Abort()
+			return
+		}
 
-        userRole, ok := claims["role"].(string)
-        if !ok || userRole != role {
-            log.Println("Role mismatch")
-            c.JSON(http.StatusForbidden, gin.H{"error": "Access denied: unauthorized role"})
-            c.Abort()
-            return
-        }
+		// Extract role
+		userRole, ok := claims["role"].(string)
+		if !ok {
+			log.Println("Role missing in token claims")
+			c.JSON(http.StatusForbidden, gin.H{"error": "Access denied"})
+			c.Abort()
+			return
+		}
 
-        // Optional debug for department
-        department, _ := claims["dept"].(string)
-        log.Println("Department from token:", department)
-        c.Set("department", department)
+		// Role check only if requiredRole is provided (non-empty)
+		if requiredRole != "" && userRole != requiredRole {
+			log.Println("Role mismatch")
+			c.JSON(http.StatusForbidden, gin.H{"error": "Access denied: unauthorized role"})
+			c.Abort()
+			return
+		}
 
-        // Save to context
-        c.Set("id", claims["id"])
-        c.Set("email", claims["email"])
-        c.Set("role", userRole)
-        c.Set("department", department)
+		// Extract optional department
+		var department string
+		if deptVal, exists := claims["dept"]; exists {
+			department, _ = deptVal.(string)
+		}
 
-        log.Println("Token verified, continuing to handler")
-        c.Next()
-    }
+		// SessionID extraction (must be present)
+		sessionIDFloat, ok := claims["session_id"].(float64)
+		if !ok {
+			log.Println("Session ID missing in token claims")
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Session not selected. Please login again."})
+			c.Abort()
+			return
+		}
+		sessionID := int(sessionIDFloat)
+
+		// Save claims to context
+		c.Set("id", claims["id"])
+		c.Set("email", claims["email"])
+		c.Set("role", userRole)
+		c.Set("department", department)
+		c.Set("session_id", sessionID)
+
+		log.Println("Token verified, continuing to handler")
+		c.Next()
+	}
 }

@@ -41,21 +41,40 @@ func main() {
 	router := gin.Default()
 	router.Use(middleware.CorsHandlerMiddleware())
 
-	// Middleware to set department repository
-    router.Use(func(c *gin.Context) {
-        c.Set("deptRepo", departmentRepo)
-        c.Next()
-    })
+	// Middleware to set department repository in context
+	router.Use(func(c *gin.Context) {
+		c.Set("deptRepo", departmentRepo)
+		c.Next()
+	})
 
 	// Student routes
 	studentRoutes := router.Group("/students")
+	studentRoutes.Use(middleware.AuthMiddleware(cfg.JwtSecretKey, "")) // Auth for all student routes
+
 	{
-		studentRoutes.POST("/", studentController.CreateStudentHandler)
-		studentRoutes.GET("/", studentController.GetAllStudentsHandler)
-		studentRoutes.GET("/department", studentController.GetStudentsByDepartment)
-		studentRoutes.GET("/:reg_no", studentController.GetStudentByRegNoHandler)
-		studentRoutes.PUT("/", studentController.UpdateStudentHandler)
-		studentRoutes.DELETE("/:reg_no", studentController.DeleteStudentHandler)
+		studentRoutes.POST("/",
+			middleware.PermissionMiddleware("create_student"),
+			studentController.CreateStudentHandler)
+
+		studentRoutes.GET("/",
+			middleware.PermissionMiddleware("view_all_students"),
+			studentController.GetAllStudentsHandler)
+
+		studentRoutes.GET("/department",
+			middleware.PermissionMiddleware("view_own_department_students"),
+			studentController.GetStudentsByDepartment)
+
+		studentRoutes.GET("/:reg_no",
+			middleware.PermissionMiddleware("view_all_students"), // Assuming reg_no fetch is admin/placement_team-only
+			studentController.GetStudentByRegNoHandler)
+
+		studentRoutes.PUT("/",
+			middleware.PermissionMiddleware("update_student"),
+			studentController.UpdateStudentHandler)
+
+		studentRoutes.DELETE("/:reg_no",
+			middleware.PermissionMiddleware("delete_student"),
+			studentController.DeleteStudentHandler)
 	}
 
 	// Start server

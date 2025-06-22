@@ -12,8 +12,9 @@ import (
 
 // Config struct holds application configuration
 type Config struct {
-	Port   string
-	DB_URL string
+	Port         string
+	DB_URL       string
+	JwtSecretKey string
 }
 
 // LoadConfig loads configuration from environment variables
@@ -26,8 +27,9 @@ func LoadConfig() (*Config, error) {
 
 	// Retrieve config values
 	config := &Config{
-		Port:   os.Getenv("COMPANY_SERVICE_PORT"),
-		DB_URL: os.Getenv("DATABASE_URL"),
+		Port:         os.Getenv("COMPANY_SERVICE_PORT"),
+		DB_URL:       os.Getenv("DATABASE_URL"),
+		JwtSecretKey: os.Getenv("JWT_SECRET_KEY"),
 	}
 
 	// Ensure required values are set
@@ -36,6 +38,9 @@ func LoadConfig() (*Config, error) {
 	}
 	if config.DB_URL == "" {
 		return nil, fmt.Errorf("database URL is required")
+	}
+	if config.JwtSecretKey == "" {
+		return nil, fmt.Errorf("JWT secret key is required")
 	}
 
 	return config, nil

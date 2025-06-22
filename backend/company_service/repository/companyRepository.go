@@ -164,7 +164,7 @@ func (r *CompanyRepository) AssignMultipleStudentsToCompany(ctx context.Context,
     for _, student := range students {
         insertQuery := `INSERT INTO company_student (company_name, reg_no, student_name, email, stipend, ppo_i, ppo, i, department) 
                         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`
-        _, err := tx.ExecContext(ctx, insertQuery, companyName, student.RegNo, student.StudentName, student.Email, student.Stipend, student.PPO_I, student.PPO, student.I, student.Department)
+        _, err := tx.ExecContext(ctx, insertQuery, companyName, student.RegNo, student.StudentName, student.Email, student.Stipend, student.PPOI, student.PPO, student.I, student.Department)
         if err != nil {
             log.Printf("Error inserting student %s: %v", student.RegNo, err)
             tx.Rollback()
@@ -269,7 +269,7 @@ func (r *CompanyRepository) GetStudentsByCompany(ctx context.Context, companyNam
     var students []model.CompanyStudent
     for rows.Next() {
         var student model.CompanyStudent
-        if err := rows.Scan(&student.ID, &student.CompanyName, &student.RegNo, &student.StudentName, &student.Email, &student.Stipend, &student.PPO_I, &student.PPO, &student.I, &student.Department); err != nil {
+        if err := rows.Scan(&student.ID, &student.CompanyName, &student.RegNo, &student.StudentName, &student.Email, &student.Stipend, &student.PPOI, &student.PPO, &student.I, &student.Department); err != nil {
             return nil, err
         }
         students = append(students, student)
