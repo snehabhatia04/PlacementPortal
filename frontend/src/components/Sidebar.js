@@ -139,7 +139,7 @@ import {
   Toolbar,
   Typography
 } from "@mui/material";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 
 const Sidebar = () => {
@@ -156,15 +156,30 @@ const Sidebar = () => {
     fetchCompanies();
   }, []);
 
+  // const fetchCompanies = async () => {
+  //   try {
+  //     const res = await fetch("http://localhost:5002/companies/");
+  //     const data = await res.json();
+  //     setCompanies(data);
+  //   } catch (err) {
+  //     console.error("Failed to fetch companies", err);
+  //   }
+  // };
   const fetchCompanies = async () => {
-    try {
-      const res = await fetch("http://localhost:5002/companies/");
-      const data = await res.json();
+  try {
+    const res = await fetch("http://localhost:5002/companies/");
+    const data = await res.json();
+    console.log("Fetched companies response:", data);
+    if (Array.isArray(data)) {
       setCompanies(data);
-    } catch (err) {
-      console.error("Failed to fetch companies", err);
+    } else {
+      console.error("Expected an array but got:", data);
+      setCompanies([]); // to avoid breaking map
     }
-  };
+  } catch (err) {
+    console.error("Failed to fetch companies", err);
+  }
+};
 
   const handleAddCompany = async () => {
     try {

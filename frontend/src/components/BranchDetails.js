@@ -173,7 +173,7 @@ import {
   Select,
   Typography,
 } from "@mui/material";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { usePlacement } from "../MainTable/MainPlacementTable";
 import PlacementTable from "./PlacementTable";

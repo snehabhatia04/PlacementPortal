@@ -1,27 +1,27 @@
 import LogoutIcon from "@mui/icons-material/Logout";
-import MenuIcon from "@mui/icons-material/Menu";
-import NotificationsIcon from "@mui/icons-material/Notifications";
+import NotificationsNoneIcon from "@mui/icons-material/NotificationsNone";
 import SearchIcon from "@mui/icons-material/Search";
 import {
   AppBar,
   Box,
   Button,
+  Card,
+  CardContent,
+  Grid,
   IconButton,
   InputBase,
-  Menu, MenuItem,
   Paper,
-  Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-  Toolbar, Typography
+  Toolbar,
+  Typography,
 } from "@mui/material";
 import { styled } from "@mui/system";
-import React, { useState } from "react";
 
 const Content = styled(Box)(({ theme }) => ({
   padding: theme.spacing(3),
-  marginTop: "64px",
   backgroundColor: theme.palette.background.default,
   minHeight: "calc(100vh - 64px)",
 }));
+
 
 const LogoutButton = styled(Button)({
   backgroundColor: "white",
@@ -40,83 +40,88 @@ const SearchBar = styled(Paper)(({ theme }) => ({
   alignItems: "center",
   padding: "4px 10px",
   borderRadius: "20px",
-  width: "100%",
-  maxWidth: 300,
-  marginLeft: "auto",
+  width: "240px",
+  marginLeft: theme.spacing(2),
   backgroundColor: "#fff2e6",
-  fontFamily: "'Segoe UI', sans-serif",
 }));
 
 const ToggleButton = styled(IconButton)(({ theme }) => ({
   color: "white",
-  marginRight: theme.spacing(2),
 }));
 
-//const Dashboard = ({ user = "User" }) => {
-  const Dashboard = ({ user = "User", handleLogout }) => {
-  const [anchorEl, setAnchorEl] = useState(null);
+const SummaryCard = styled(Card)({
+  backgroundColor: "#fff6ed",
+  borderRadius: "16px",
+  boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+  minWidth: 160,
+});
 
-  const handleNotificationClick = (event) => setAnchorEl(event.currentTarget);
-  const handleNotificationClose = () => setAnchorEl(null);
-
+const Dashboard = ({ user = "User", handleLogout, batch = "2021-2025" }) => {
   return (
     <>
-      <AppBar position="fixed" sx={{ backgroundColor: "#E87722", padding: "0.5rem" }}>
-        <Toolbar>
-          <ToggleButton edge="start">
-            <MenuIcon />
-          </ToggleButton>
-          <Typography variant="h6" sx={{ flexGrow: 1, fontWeight: "bold", fontFamily: "'Segoe UI', sans-serif" }}>
-            Dashboard
-          </Typography>
-          <SearchBar>
-            <SearchIcon />
-            <InputBase placeholder="Search…" sx={{ ml: 1, flex: 1 }} />
-          </SearchBar>
-          <IconButton color="inherit" onClick={handleNotificationClick}>
-            <NotificationsIcon />
-          </IconButton>
-          <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleNotificationClose}>
-            <MenuItem onClick={handleNotificationClose}>New Placement Drive</MenuItem>
-            <MenuItem onClick={handleNotificationClose}>Internship Fair</MenuItem>
-          </Menu>
-          <Typography variant="body1" sx={{ mx: 2, fontWeight: 500 }}>{`229301245 :: ${user.toUpperCase()}`}</Typography>
-          <LogoutButton startIcon={<LogoutIcon />} onClick={handleLogout}>
-            Logout
-          </LogoutButton>
-        </Toolbar>
-      </AppBar>
+      <AppBar position="static" sx={{ backgroundColor: "#E87722", padding: "0.5rem" }}>
+  <Toolbar sx={{ display: "flex", justifyContent: "space-between" }}>
 
+    {/* Centered Search Bar */}
+    <Box sx={{ flexGrow: 1, display: "flex", justifyContent: "center" }}>
+      <SearchBar>
+        <SearchIcon />
+        <InputBase placeholder="Search…" sx={{ ml: 1, flex: 1 }} />
+      </SearchBar>
+    </Box>
+
+    {/* Right-side Icons and User Info */}
+    <Box sx={{ display: "flex", alignItems: "center" }}>
+      <IconButton sx={{ color: "white" }}>
+        <NotificationsNoneIcon />
+      </IconButton>
+
+      <Typography variant="body1" sx={{ mx: 2, fontWeight: 600, maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+  229301245 :: {user.toUpperCase()}
+</Typography>
+
+
+      <LogoutButton startIcon={<LogoutIcon />} onClick={handleLogout}>
+        Logout
+      </LogoutButton>
+    </Box>
+
+  </Toolbar>
+</AppBar>
+
+
+      {/* Page Content */}
       <Content>
         <Typography variant="h5" fontWeight="bold" color="#E87722" gutterBottom>
-          Notifications
+          Batch: {batch}
         </Typography>
-        <TableContainer component={Paper} sx={{ backgroundColor: "#fff8f1" }}>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell><Typography fontWeight="bold">S. No.</Typography></TableCell>
-                <TableCell><Typography fontWeight="bold">Description</Typography></TableCell>
-                <TableCell><Typography fontWeight="bold">Date</Typography></TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              <TableRow>
-                <TableCell>1</TableCell>
-                <TableCell>Placement Drive for XYZ Company</TableCell>
-                <TableCell>20-Feb-2025</TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell>2</TableCell>
-                <TableCell>Internship Fair Registration Open</TableCell>
-                <TableCell>25-Feb-2025</TableCell>
-              </TableRow>
-            </TableBody>
-          </Table>
-        </TableContainer>
+
+        <Grid container spacing={3} mt={1}>
+          {[
+            { label: "Total Students", value: 120 },
+            { label: "Placed", value: 85 },
+            { label: "On Campus", value: 60 },
+            { label: "Off Campus", value: 25 },
+            { label: "Higher Studies", value: 15 },
+            { label: "Entrepreneurship", value: 5 },
+            { label: "Business", value: 3 },
+          ].map(({ label, value }) => (
+            <Grid item xs={12} sm={6} md={4} lg={3} key={label}>
+              <SummaryCard>
+                <CardContent>
+                  <Typography variant="h6" color="#E87722" fontWeight="bold">
+                    {value}
+                  </Typography>
+                  <Typography variant="body1">{label}</Typography>
+                </CardContent>
+              </SummaryCard>
+            </Grid>
+          ))}
+        </Grid>
       </Content>
     </>
   );
 };
 
 export default Dashboard;
+

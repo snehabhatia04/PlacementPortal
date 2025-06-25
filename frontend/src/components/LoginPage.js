@@ -1,6 +1,6 @@
 import { Box, Button, Container, TextField, Typography } from "@mui/material";
 import { styled } from "@mui/system";
-import React, { useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 const LoginContainer = styled(Container)({
@@ -43,14 +43,14 @@ const LoginPage = ({ onLoginSuccess }) => {
   const navigate = useNavigate();
 
   const handleLogin = () => {
-    if (!email.endsWith("@muj.ac.in")) {
+    if (!email.endsWith("com")) {
       setError("Only @jaipur.manipal emails are allowed.");
       return;
     }
 
     setError("");
 
-    fetch("http://localhost:8080/admin/login", {
+    fetch("http://localhost:8080/login", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
