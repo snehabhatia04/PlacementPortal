@@ -1,7 +1,7 @@
 package middleware
 
 import (
-	"Placement-Portal/pkg/constants"
+	"placementportal/backend/pkg/constants"
 	"net/http"
 
 	"github.com/gin-gonic/gin"

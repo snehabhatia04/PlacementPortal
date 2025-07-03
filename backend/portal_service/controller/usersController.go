@@ -1,9 +1,9 @@
 package controller
 
 import (
-	"Placement-Portal/pkg/model"
-	"Placement-Portal/portal_service/config"
-	"Placement-Portal/portal_service/repository"
+	"placementportal/backend/pkg/model"
+	"placementportal/backend/portal_service/repository"
+    "placementportal/backend/portal_service/config"
 	"math/rand"
 	"net/http"
 	"time"
@@ -80,6 +80,7 @@ func (uc *UserController) CreateUserHandler(c *gin.Context) {
 }
 
 // LoginUserHandler - all users login by email-password
+// 
 func (uc *UserController) LoginUserHandler(c *gin.Context) {
     var input struct {
         Email    string `json:"email" binding:"required,email"`
@@ -91,16 +92,28 @@ func (uc *UserController) LoginUserHandler(c *gin.Context) {
         return
     }
 
+    // DEBUG: Log incoming email and password (DO NOT log passwords in production)
+    println("🔐 Login attempt")
+    println("📧 Email:", input.Email)
+    println("🔑 Password:", input.Password)
+
     user, err := uc.UserRepo.GetUserByEmail(input.Email)
     if err != nil {
+        println("❌ Error fetching user by email:", err.Error())
         c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
         return
     }
 
+    println("🧍 User found:", user.Email)
+    println("🔒 Stored password hash:", user.PasswordHash)
+
     if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(input.Password)); err != nil {
+        println("❌ Password mismatch:", err.Error())
         c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
         return
     }
+
+    println("✅ Password match")
 
     cfg, _ := config.LoadConfig()
 
@@ -108,7 +121,7 @@ func (uc *UserController) LoginUserHandler(c *gin.Context) {
         "id":         user.ID,
         "email":      user.Email,
         "role":       user.Role,
-        "session_id": user.SessionID,  // direct assignment here
+        "session_id": user.SessionID,
         "exp":        time.Now().Add(time.Hour * 24).Unix(),
     }
 
@@ -125,7 +138,6 @@ func (uc *UserController) LoginUserHandler(c *gin.Context) {
         "status":  user.Status,
     })
 }
-
 
 // ResetPasswordHandler - allows user to reset their password
 func (uc *UserController) ResetPasswordHandler(c *gin.Context) {

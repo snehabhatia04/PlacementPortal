@@ -1,8 +1,8 @@
 // package controller
 
 // import (
-// 	"Placement-Portal/pkg/model"
-// 	"Placement-Portal/student_service/repository"
+// 	"	placementportal/pkg/model"
+// 	"	 placementportal/backend/student_service/repository"
 // 	"errors"
 // 	"log"
 // 	"net/http"
@@ -319,8 +319,9 @@
 package controller
 
 import (
-	"Placement-Portal/pkg/model"
-	"Placement-Portal/student_service/repository"
+	"placementportal/backend/pkg/model"
+	"placementportal/backend/student_service/repository"
+
 	"errors"
 	"log"
 	"net/http"

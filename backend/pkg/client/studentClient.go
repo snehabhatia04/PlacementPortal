@@ -10,9 +10,9 @@ import (
 	"log"
 	"net/http"
 
-	"Placement-Portal/pkg/model"
-	"Placement-Portal/portal_service/config"
-)
+	"placementportal/backend/pkg/model"
+
+	)
 
 // StudentClient struct
 type StudentClient struct {

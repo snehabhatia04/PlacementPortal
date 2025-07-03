@@ -1,7 +1,7 @@
 package repository
 
 import (
-	"Placement-Portal/pkg/model"
+	"placementportal/backend/pkg/model"
 	"context"
 	"fmt"
 

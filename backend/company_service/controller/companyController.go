@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"strings"
 
-	"Placement-Portal/company_service/repository"
-	"Placement-Portal/pkg/model"
+	"placementportal/backend/company_service/repository"
+	"placementportal/backend/pkg/model"
 
 	"github.com/gin-gonic/gin"
 )

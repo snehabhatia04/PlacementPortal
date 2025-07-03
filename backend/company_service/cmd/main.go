@@ -3,15 +3,16 @@ package main
 import (
 	"log"
 
-	"Placement-Portal/company_service/config"
-	"Placement-Portal/company_service/controller"
-	"Placement-Portal/company_service/repository"
-	"Placement-Portal/pkg/constants"
-	"Placement-Portal/pkg/middleware"
-	studentRepo "Placement-Portal/student_service/repository"
+	"placementportal/backend/company_service/config"
+	"placementportal/backend/company_service/controller"
+	"placementportal/backend/company_service/repository"
+	"placementportal/backend/pkg/constants"
+	"placementportal/backend/pkg/middleware"
+	studentRepo "placementportal/backend/student_service/repository"
 
 	"github.com/gin-gonic/gin"
 )
+
 
 func main() {
 	// Load configuration

@@ -3,10 +3,10 @@ package main
 import (
 	"log"
 
-	"Placement-Portal/pkg/middleware"
-	"Placement-Portal/student_service/config"
-	"Placement-Portal/student_service/controller"
-	"Placement-Portal/student_service/repository"
+	"placementportal/backend/pkg/middleware"
+	"placementportal/backend/student_service/config"
+	"placementportal/backend/student_service/controller"
+	"placementportal/backend/student_service/repository"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"

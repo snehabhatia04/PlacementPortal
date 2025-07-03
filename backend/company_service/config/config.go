@@ -32,7 +32,7 @@ func LoadConfig() (*Config, error) {
 		JwtSecretKey: os.Getenv("JWT_SECRET_KEY"),
 	}
 
-	// Ensure required values are set
+	// Ensure required values are <TableCell>{student.regNo}</TableCell>
 	if config.Port == "" {
 		return nil, fmt.Errorf("server port is required")
 	}

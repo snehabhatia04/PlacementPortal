@@ -1,12 +1,12 @@
 // package main
 
 // import (
-// 	"Placement-Portal/pkg/client"
-// 	"Placement-Portal/pkg/database"
-// 	"Placement-Portal/pkg/middleware"
-// 	"Placement-Portal/portal_service/config"
-// 	"Placement-Portal/portal_service/controller"
-// 	"Placement-Portal/portal_service/repository"
+// 	"	placementportal/pkg/client"
+// 	"	placementportal/pkg/database"
+// 	"	placementportal/pkg/middleware"
+// 	placementportal/backend/portal_service/
+// 	"placementportalportal_service/controller"
+// 	"placementportalportal_service/repository"
 // 	"log"
 
 // 	"github.com/gin-gonic/gin"
@@ -75,17 +75,23 @@ package main
 import (
 	"log"
 
-	"Placement-Portal/pkg/constants"
-	"Placement-Portal/pkg/database"
-	"Placement-Portal/pkg/middleware"
-	"Placement-Portal/portal_service/config"
-	"Placement-Portal/portal_service/controller"
-	"Placement-Portal/portal_service/repository"
+	"placementportal/backend/pkg/constants"
+	"placementportal/backend/pkg/database"
+	"placementportal/backend/pkg/middleware"
+	"placementportal/backend/portal_service/config"
+	"placementportal/backend/portal_service/controller"
+	"placementportal/backend/portal_service/repository"
 
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 )
 
-func main() {
+
+func main() {err := godotenv.Load("../.env") // ← Load from student_service folder
+	if err != nil {
+		log.Println("Warning: No .env file found. Using system environment variables.")
+	}
+	
 	// Load config
 	cfg, err := config.LoadConfig()
 	if err != nil {

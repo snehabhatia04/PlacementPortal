@@ -1,8 +1,7 @@
 package client
 
 import (
-	"Placement-Portal/pkg/model"
-	"Placement-Portal/portal_service/config"
+	"placementportal/backend/pkg/model"
 	"encoding/json"
 	"errors"
 	"fmt"

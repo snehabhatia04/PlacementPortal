@@ -7,8 +7,8 @@ import (
 	"log"
 	"strings"
 
-	"Placement-Portal/pkg/model"
-	"Placement-Portal/student_service/repository"
+	"placementportal/backend/pkg/model"
+	"placementportal/backend/student_service/repository"
 
 	"github.com/jmoiron/sqlx"
 )

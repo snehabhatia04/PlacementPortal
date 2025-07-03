@@ -5,7 +5,7 @@ import (
 	"log"
 	"strconv"
 
-	"Placement-Portal/pkg/model"
+	"placementportal/backend/pkg/model"
 
 	"github.com/jmoiron/sqlx"
 	"golang.org/x/crypto/bcrypt"
