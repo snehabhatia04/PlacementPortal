@@ -1380,22 +1380,12 @@ const AppRoutes = ({
             element={
               isAuthenticated ? <OffCampusPage /> : <Navigate to="/login" />
             }
-          /><Route
-  path="/students"
-  element={
-    isAuthenticated && selectedBatch ? (
-      <StudentDetails />
-    ) : (
-      <Navigate to="/login" />
-    )
-  }
-/>
-
+          />
           <Route
   path="/students/:branch"
   element={
     isAuthenticated && selectedBatch ? (
-      <StudentDetails />
+      <BranchDetails />
     ) : (
       <Navigate to="/login" />
     )

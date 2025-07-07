@@ -689,39 +689,434 @@
 
 // export default CompanyPage;
 
+// import {
+//   Alert,
+//   Box,
+//   Button,
+//   Checkbox,
+//   CircularProgress,
+//   Dialog,
+//   DialogActions,
+//   DialogContent,
+//   DialogTitle,
+//   FormControlLabel,
+//   Paper,
+//   Table,
+//   TableBody,
+//   TableCell,
+//   TableContainer,
+//   TableHead,
+//   TableRow,
+//   TextField,
+//   Typography,
+// } from "@mui/material";
+// import axiosInstance from "../utils/axiosInstance";
+// import React, { useEffect, useState } from "react";
+// import { useParams } from "react-router-dom";
+// import { usePlacement } from "../MainTable/MainPlacementTable";
+
+// const CompanyPage = () => {
+//   const { companyName } = useParams();
+//   const [students, setStudents] = useState([]);
+//   const [loading, setLoading] = useState(true);
+//   const [error, setError] = useState(null);
+
+//   const [openDialog, setOpenDialog] = useState(false);
+//   const [newStudent, setNewStudent] = useState({
+//     reg_no: "",
+//     student_name: "",
+//     email: "",
+//     stipend: "",
+//     department: "",
+//     ppo: false,
+//     ppo_i: false,
+//     i: false,
+//   });
+
+//   const { addStudent, fetchAllStudents } = usePlacement();
+
+//   useEffect(() => {
+//     if (!companyName) return;
+//     setLoading(true);
+//     setError(null);
+
+//     axiosInstance
+//   .get(`/companies/${companyName}/students`)
+// .then((response) => {
+//         setStudents(Array.isArray(response.data) ? response.data : []);
+//       })
+//       .catch((error) => {
+//         console.error("Error fetching students:", error);
+//         setError("Failed to fetch students. Please try again later.");
+//       })
+//       .finally(() => setLoading(false));
+//   }, [companyName]);
+
+//   const handleDialogClose = () => {
+//     setOpenDialog(false);
+//     setNewStudent({
+//       reg_no: "",
+//       student_name: "",
+//       email: "",
+//       stipend: "",
+//       department: "",
+//       ppo: false,
+//       ppo_i: false,
+//       i: false,
+//     });
+//   };
+
+//   const handleInputChange = (e) => {
+//     const { name, value } = e.target;
+//     setNewStudent((prev) => ({ ...prev, [name]: value }));
+//   };
+
+//   const handleCheckboxChange = (e) => {
+//     const { name, checked } = e.target;
+//     setNewStudent((prev) => ({ ...prev, [name]: checked }));
+//   };
+
+//   const handleAddStudent = async () => {
+//     if (!newStudent.reg_no || !newStudent.student_name || !newStudent.email) {
+//       alert("Please fill in all required fields.");
+//       return;
+//     }
+
+//     const payload = {
+//       regNo: newStudent.reg_no,
+//       name: newStudent.student_name,
+//       email: newStudent.email,
+//       department: newStudent.department,
+//       company: companyName,
+//       status: "OnCampus",
+//       stipend: parseFloat(newStudent.stipend),
+//       offerType: newStudent.ppo ? "PPO" : newStudent.ppo_i ? "PPO + I" : newStudent.i ? "I" : "",
+//     };
+
+//     try {
+//       await addStudent(payload);
+//       await fetchAllStudents();
+//       handleDialogClose();
+//     } catch (err) {
+//       console.error("❌ Error adding student:", err);
+//       setError("Failed to add student. Please try again.");
+//     }
+//   };
+
+//   return (
+//     <Box sx={{ padding: "2rem" }}>
+//       <Typography variant="h5" sx={{ color: "#E87722", marginBottom: "1rem" }}>
+//         {companyName?.toUpperCase() || "Company"} Placement Details
+//       </Typography>
+
+//       {error && (
+//         <Alert severity="error" sx={{ marginBottom: "1rem" }}>
+//           {error}
+//         </Alert>
+//       )}
+
+//       {loading ? (
+//         <Box display="flex" justifyContent="center" mt={4}>
+//           <CircularProgress />
+//         </Box>
+//       ) : (
+//         <>
+//           <Button
+//             variant="contained"
+//             color="primary"
+//             sx={{ marginBottom: "1rem" }}
+//             onClick={() => setOpenDialog(true)}
+//           >
+//             Add Student
+//           </Button>
+
+//           <TableContainer component={Paper}>
+//             <Table>
+//               <TableHead sx={{ backgroundColor: "#E87722" }}>
+//                 <TableRow>
+//                   {["Reg No", "Name", "Email", "Department", "Stipend", "PPO", "PPO + I", "I", "Actions"].map((label) => (
+//                     <TableCell key={label} sx={{ color: "white", fontWeight: "bold" }}>{label}</TableCell>
+//                   ))}
+//                 </TableRow>
+//               </TableHead>
+//               <TableBody>
+//                 {students.length > 0 ? (
+//                   students.map((student, index) => (
+//                     <TableRow key={index}>
+//                       <TableCell>{student.reg_no}</TableCell>
+//                       <TableCell>{student.student_name}</TableCell>
+//                       <TableCell>{student.email}</TableCell>
+//                       <TableCell>{student.department}</TableCell>
+//                       <TableCell>{student.stipend}</TableCell>
+//                       <TableCell>{student.ppo ? "Yes" : "No"}</TableCell>
+//                       <TableCell>{student.ppo_i ? "Yes" : "No"}</TableCell>
+//                       <TableCell>{student.i ? "Yes" : "No"}</TableCell>
+//                       <TableCell>
+//                         <Button
+//                           variant="outlined"
+//                           color="error"
+//                           onClick={() => handleDeleteStudent(student.id)}
+//                         >
+//                           Delete
+//                         </Button>
+//                       </TableCell>
+//                     </TableRow>
+//                   ))
+//                 ) : (
+//                   <TableRow>
+//                     <TableCell colSpan={9} align="center">
+//                       No students found for {companyName}
+//                     </TableCell>
+//                   </TableRow>
+//                 )}
+//               </TableBody>
+//             </Table>
+//           </TableContainer>
+//         </>
+//       )}
+
+//       <Dialog open={openDialog} onClose={handleDialogClose}>
+//         <DialogTitle>Add New Student</DialogTitle>
+//         <DialogContent>
+//           {["reg_no", "student_name", "email", "department", "stipend"].map((field) => (
+//             <TextField
+//               key={field}
+//               label={field.replace("_", " ").toUpperCase()}
+//               variant="outlined"
+//               fullWidth
+//               value={newStudent[field]}
+//               name={field}
+//               onChange={handleInputChange}
+//               sx={{ marginBottom: "1rem" }}
+//             />
+//           ))}
+//           {["ppo", "ppo_i", "i"].map((flag) => (
+//             <FormControlLabel
+//               key={flag}
+//               control={<Checkbox checked={newStudent[flag]} onChange={handleCheckboxChange} name={flag} />}
+//               label={flag.toUpperCase()}
+//             />
+//           ))}
+//         </DialogContent>
+//         <DialogActions>
+//           <Button onClick={handleDialogClose}>Cancel</Button>
+//           <Button variant="contained" onClick={handleAddStudent}>Add</Button>
+//         </DialogActions>
+//       </Dialog>
+//     </Box>
+//   );
+// };
+
+// // export default CompanyPage;
+// import React, { useEffect, useState } from "react";
+// import {
+//   Box,
+//   Button,
+//   Dialog,
+//   DialogActions,
+//   DialogContent,
+//   DialogTitle,
+//   TextField,
+//   Typography,
+//   Checkbox,
+//   FormControlLabel,
+//   CircularProgress,
+//   Alert,
+// } from "@mui/material";
+// import { useParams } from "react-router-dom";
+// import { usePlacement } from "../MainTable/MainPlacementTable";
+// import PlacementTable from "./PlacementTable";
+
+// const CompanyPage = () => {
+//   const { companyName } = useParams();
+//   const [students, setStudents] = useState([]);
+//   const [loading, setLoading] = useState(true);
+//   const [error, setError] = useState(null);
+//   const [openDialog, setOpenDialog] = useState(false);
+
+//   const [newStudent, setNewStudent] = useState({
+//     reg_no: "",
+//     student_name: "",
+//     email: "",
+//     stipend: "",
+//     department: "",
+//     ppo: false,
+//     ppo_i: false,
+//     i: false,
+//   });
+
+//   const { allStudents, fetchAllStudents, addStudent } = usePlacement();
+
+//   useEffect(() => {
+//     const load = async () => {
+//       setLoading(true);
+//       await fetchAllStudents();
+//       setLoading(false);
+//     };
+//     load();
+//   }, [companyName]);
+
+//   useEffect(() => {
+//     if (!companyName || !allStudents.length) return;
+//     const filtered = allStudents.filter((student) =>
+//       (student.offers || []).some(
+//         (offer) => offer.company?.toLowerCase() === companyName.toLowerCase()
+//       )
+//     );
+//     setStudents(filtered);
+//   }, [allStudents, companyName]);
+
+//   const handleDialogClose = () => {
+//     setOpenDialog(false);
+//     setNewStudent({
+//       reg_no: "",
+//       student_name: "",
+//       email: "",
+//       stipend: "",
+//       department: "",
+//       ppo: false,
+//       ppo_i: false,
+//       i: false,
+//     });
+//   };
+
+//   const handleInputChange = (e) => {
+//     const { name, value } = e.target;
+//     setNewStudent((prev) => ({ ...prev, [name]: value }));
+//   };
+
+//   const handleCheckboxChange = (e) => {
+//     const { name, checked } = e.target;
+//     setNewStudent((prev) => ({ ...prev, [name]: checked }));
+//   };
+
+//   const handleAddStudent = async () => {
+//     if (!newStudent.reg_no || !newStudent.student_name || !newStudent.email) {
+//       alert("Please fill in all required fields.");
+//       return;
+//     }
+
+//     const payload = {
+//       regNo: newStudent.reg_no,
+//       name: newStudent.student_name,
+//       email: newStudent.email,
+//       department: newStudent.department,
+//       offers: [
+//         {
+//           company: companyName,
+//           type: newStudent.ppo
+//             ? "PPO"
+//             : newStudent.ppo_i
+//             ? "PPO + I"
+//             : newStudent.i
+//             ? "I"
+//             : "",
+//           stipend: parseFloat(newStudent.stipend),
+//           internship: newStudent.i,
+//           package: "",
+//         },
+//       ],
+//       placementStatus: "OnCampus",
+//     };
+
+//     try {
+//       await addStudent(payload);
+//       await fetchAllStudents();
+//       handleDialogClose();
+//     } catch (err) {
+//       console.error("❌ Error adding student:", err);
+//       setError("Failed to add student. Please try again.");
+//     }
+//   };
+
+//   return (
+//     <Box sx={{ padding: "2rem" }}>
+//       <Typography variant="h5" sx={{ color: "#E87722", marginBottom: "1rem" }}>
+//         {companyName?.toUpperCase() || "Company"} Placement Details
+//       </Typography>
+
+//       {error && (
+//         <Alert severity="error" sx={{ marginBottom: "1rem" }}>
+//           {error}
+//         </Alert>
+//       )}
+
+//       {loading ? (
+//         <Box display="flex" justifyContent="center" mt={4}>
+//           <CircularProgress />
+//         </Box>
+//       ) : (
+//         <PlacementTable studentData={students} companyView={companyName} />
+//       )}
+
+//       <Button
+//         variant="contained"
+//         color="primary"
+//         sx={{ marginTop: "1.5rem" }}
+//         onClick={() => setOpenDialog(true)}
+//       >
+//         Add Student
+//       </Button>
+
+//       <Dialog open={openDialog} onClose={handleDialogClose}>
+//         <DialogTitle>Add New Student</DialogTitle>
+//         <DialogContent>
+//           {["reg_no", "student_name", "email", "department", "stipend"].map((field) => (
+//             <TextField
+//               key={field}
+//               label={field.replace("_", " ").toUpperCase()}
+//               variant="outlined"
+//               fullWidth
+//               value={newStudent[field]}
+//               name={field}
+//               onChange={handleInputChange}
+//               sx={{ marginBottom: "1rem" }}
+//             />
+//           ))}
+//           {["ppo", "ppo_i", "i"].map((flag) => (
+//             <FormControlLabel
+//               key={flag}
+//               control={<Checkbox checked={newStudent[flag]} onChange={handleCheckboxChange} name={flag} />}
+//               label={flag.toUpperCase()}
+//             />
+//           ))}
+//         </DialogContent>
+//         <DialogActions>
+//           <Button onClick={handleDialogClose}>Cancel</Button>
+//           <Button variant="contained" onClick={handleAddStudent}>Add</Button>
+//         </DialogActions>
+//       </Dialog>
+//     </Box>
+//   );
+// };
+
+// export default CompanyPage;
+import React, { useEffect, useState } from "react";
 import {
-  Alert,
   Box,
   Button,
-  Checkbox,
-  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
-  FormControlLabel,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   TextField,
   Typography,
+  Checkbox,
+  FormControlLabel,
+  CircularProgress,
+  Alert,
 } from "@mui/material";
-import axios from "axios";
-import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { usePlacement } from "../MainTable/MainPlacementTable";
+import PlacementTable from "./PlacementTable";
 
 const CompanyPage = () => {
   const { companyName } = useParams();
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
   const [openDialog, setOpenDialog] = useState(false);
+
   const [newStudent, setNewStudent] = useState({
     reg_no: "",
     student_name: "",
@@ -733,24 +1128,33 @@ const CompanyPage = () => {
     i: false,
   });
 
-  const { addStudent, fetchAllStudents } = usePlacement();
+  const { allStudents, fetchAllStudents, addStudent } = usePlacement();
 
+  // Fetch all students when companyName changes
   useEffect(() => {
-    if (!companyName) return;
-    setLoading(true);
-    setError(null);
-
-    axios
-      .get(`http://localhost:5002/companies/${companyName}/students`)
-      .then((response) => {
-        setStudents(Array.isArray(response.data) ? response.data : []);
-      })
-      .catch((error) => {
-        console.error("Error fetching students:", error);
-        setError("Failed to fetch students. Please try again later.");
-      })
-      .finally(() => setLoading(false));
+    const load = async () => {
+      setLoading(true);
+      try {
+        await fetchAllStudents();
+      } catch (err) {
+        console.error("Error fetching students:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
   }, [companyName]);
+
+  // Filter students who have offer from current company
+  useEffect(() => {
+    if (!companyName || !allStudents.length) return;
+    const filtered = allStudents.filter((student) =>
+      (student.offers || []).some(
+        (offer) => offer.company?.toLowerCase() === companyName.toLowerCase()
+      )
+    );
+    setStudents(filtered);
+  }, [allStudents, companyName]);
 
   const handleDialogClose = () => {
     setOpenDialog(false);
@@ -787,10 +1191,22 @@ const CompanyPage = () => {
       name: newStudent.student_name,
       email: newStudent.email,
       department: newStudent.department,
-      company: companyName,
       status: "OnCampus",
-      stipend: parseFloat(newStudent.stipend),
-      offerType: newStudent.ppo ? "PPO" : newStudent.ppo_i ? "PPO + I" : newStudent.i ? "I" : "",
+      offers: [
+        {
+          company: companyName,
+          offer_type: newStudent.ppo
+            ? "PPO"
+            : newStudent.ppo_i
+            ? "PPO + I"
+            : newStudent.i
+            ? "I"
+            : "",
+          stipend: parseFloat(newStudent.stipend),
+          internship: newStudent.i,
+          package: "",
+        },
+      ],
     };
 
     try {
@@ -820,60 +1236,17 @@ const CompanyPage = () => {
           <CircularProgress />
         </Box>
       ) : (
-        <>
-          <Button
-            variant="contained"
-            color="primary"
-            sx={{ marginBottom: "1rem" }}
-            onClick={() => setOpenDialog(true)}
-          >
-            Add Student
-          </Button>
-
-          <TableContainer component={Paper}>
-            <Table>
-              <TableHead sx={{ backgroundColor: "#E87722" }}>
-                <TableRow>
-                  {["Reg No", "Name", "Email", "Department", "Stipend", "PPO", "PPO + I", "I", "Actions"].map((label) => (
-                    <TableCell key={label} sx={{ color: "white", fontWeight: "bold" }}>{label}</TableCell>
-                  ))}
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {students.length > 0 ? (
-                  students.map((student, index) => (
-                    <TableRow key={index}>
-                      <TableCell>{student.reg_no}</TableCell>
-                      <TableCell>{student.student_name}</TableCell>
-                      <TableCell>{student.email}</TableCell>
-                      <TableCell>{student.department}</TableCell>
-                      <TableCell>{student.stipend}</TableCell>
-                      <TableCell>{student.ppo ? "Yes" : "No"}</TableCell>
-                      <TableCell>{student.ppo_i ? "Yes" : "No"}</TableCell>
-                      <TableCell>{student.i ? "Yes" : "No"}</TableCell>
-                      <TableCell>
-                        <Button
-                          variant="outlined"
-                          color="error"
-                          onClick={() => handleDeleteStudent(student.id)}
-                        >
-                          Delete
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={9} align="center">
-                      No students found for {companyName}
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        </>
+        <PlacementTable studentData={students} companyView={companyName} />
       )}
+
+      <Button
+        variant="contained"
+        color="primary"
+        sx={{ marginTop: "1.5rem" }}
+        onClick={() => setOpenDialog(true)}
+      >
+        Add Student
+      </Button>
 
       <Dialog open={openDialog} onClose={handleDialogClose}>
         <DialogTitle>Add New Student</DialogTitle>
@@ -893,14 +1266,22 @@ const CompanyPage = () => {
           {["ppo", "ppo_i", "i"].map((flag) => (
             <FormControlLabel
               key={flag}
-              control={<Checkbox checked={newStudent[flag]} onChange={handleCheckboxChange} name={flag} />}
+              control={
+                <Checkbox
+                  checked={newStudent[flag]}
+                  onChange={handleCheckboxChange}
+                  name={flag}
+                />
+              }
               label={flag.toUpperCase()}
             />
           ))}
         </DialogContent>
         <DialogActions>
           <Button onClick={handleDialogClose}>Cancel</Button>
-          <Button variant="contained" onClick={handleAddStudent}>Add</Button>
+          <Button variant="contained" onClick={handleAddStudent}>
+            Add
+          </Button>
         </DialogActions>
       </Dialog>
     </Box>
