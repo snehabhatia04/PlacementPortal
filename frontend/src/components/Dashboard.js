@@ -121,6 +121,138 @@
 
 // export default Dashboard;
 
+// import LogoutIcon from "@mui/icons-material/Logout";
+// import MenuIcon from "@mui/icons-material/Menu";
+// import NotificationsIcon from "@mui/icons-material/Notifications";
+// import SearchIcon from "@mui/icons-material/Search";
+// import {
+//   AppBar,
+//   Box,
+//   Button,
+//   IconButton,
+//   InputBase,
+//   Menu,
+//   MenuItem,
+//   Paper,
+//   Toolbar,
+//   Typography,
+//   Grid,
+//   Card,
+//   CardContent
+// } from "@mui/material";
+// import { styled } from "@mui/system";
+// import React, { useState } from "react";
+
+// // Styles
+// const Content = styled(Box)(({ theme }) => ({
+//   padding: theme.spacing(3),
+//   marginTop: "64px",
+//   backgroundColor: theme.palette.background.default,
+//   minHeight: "calc(100vh - 64px)",
+// }));
+
+// const LogoutButton = styled(Button)({
+//   backgroundColor: "white",
+//   color: "#E87722",
+//   fontWeight: "bold",
+//   borderRadius: "12px",
+//   padding: "6px 12px",
+//   '&:hover': {
+//     backgroundColor: "#cf6b1b",
+//     color: "white",
+//   },
+// });
+
+// const SearchBar = styled(Paper)(({ theme }) => ({
+//   display: "flex",
+//   alignItems: "center",
+//   padding: "4px 10px",
+//   borderRadius: "20px",
+//   width: "100%",
+//   maxWidth: 300,
+//   marginLeft: "auto",
+//   backgroundColor: "#fff2e6",
+// }));
+
+// const ToggleButton = styled(IconButton)(({ theme }) => ({
+//   color: "white",
+//   marginRight: theme.spacing(2),
+// }));
+
+// const SummaryCard = styled(Card)({
+//   backgroundColor: "#fff8f1",
+//   borderRadius: "16px",
+//   boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+//   minWidth: 160,
+// });
+
+// const Dashboard = ({ user = "User", handleLogout, batch = "2021-2025" }) => {
+//   const [anchorEl, setAnchorEl] = useState(null);
+
+//   const handleNotificationClick = (event) => setAnchorEl(event.currentTarget);
+//   const handleNotificationClose = () => setAnchorEl(null);
+
+//   return (
+//     <>
+//       <AppBar position="fixed" sx={{ backgroundColor: "#E87722", padding: "0.5rem" }}>
+//         <Toolbar>
+//           <ToggleButton edge="start">
+//             <MenuIcon />
+//           </ToggleButton>
+//           <Typography variant="h6" sx={{ flexGrow: 1, fontWeight: "bold", fontFamily: "'Segoe UI', sans-serif" }}>
+//             Dashboard
+//           </Typography>
+//           <SearchBar>
+//             <SearchIcon />
+//             <InputBase placeholder="Search…" sx={{ ml: 1, flex: 1 }} />
+//           </SearchBar>
+//           <IconButton color="inherit" onClick={handleNotificationClick}>
+//             <NotificationsIcon />
+//           </IconButton>
+//           <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleNotificationClose}>
+//             <MenuItem onClick={handleNotificationClose}>New Placement Drive</MenuItem>
+//             <MenuItem onClick={handleNotificationClose}>Internship Fair</MenuItem>
+//           </Menu>
+//           <Typography variant="body1" sx={{ mx: 2, fontWeight: 500 }}>{`229301245 :: ${user.toUpperCase()}`}</Typography>
+//           <LogoutButton startIcon={<LogoutIcon />} onClick={handleLogout}>
+//             Logout
+//           </LogoutButton>
+//         </Toolbar>
+//       </AppBar>
+
+//       <Content>
+//         <Typography variant="h5" fontWeight="bold" color="#E87722" gutterBottom>
+//           Batch: {batch}
+//         </Typography>
+
+//         <Grid container spacing={3} mt={1}>
+//           {[
+//             { label: "Total Students", value: 120 },
+//             { label: "Placed", value: 85 },
+//             { label: "On Campus", value: 60 },
+//             { label: "Off Campus", value: 25 },
+//             { label: "Higher Studies", value: 15 },
+//             { label: "Entrepreneurship", value: 5 },
+//             { label: "Business", value: 3 },
+//           ].map(({ label, value }) => (
+//             <Grid item xs={12} sm={6} md={4} lg={3} key={label}>
+//               <SummaryCard>
+//                 <CardContent>
+//                   <Typography variant="h6" color="#E87722" fontWeight="bold">
+//                     {value}
+//                   </Typography>
+//                   <Typography variant="body1">{label}</Typography>
+//                 </CardContent>
+//               </SummaryCard>
+//             </Grid>
+//           ))}
+//         </Grid>
+//       </Content>
+//     </>
+//   );
+// };
+
+// export default Dashboard;
 import LogoutIcon from "@mui/icons-material/Logout";
 import MenuIcon from "@mui/icons-material/Menu";
 import NotificationsIcon from "@mui/icons-material/Notifications";
@@ -141,9 +273,10 @@ import {
   CardContent
 } from "@mui/material";
 import { styled } from "@mui/system";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import { usePlacement } from "../MainTable/MainPlacementTable";
 
-// Styles
+// Styles...
 const Content = styled(Box)(({ theme }) => ({
   padding: theme.spacing(3),
   marginTop: "64px",
@@ -188,9 +321,32 @@ const SummaryCard = styled(Card)({
 
 const Dashboard = ({ user = "User", handleLogout, batch = "2021-2025" }) => {
   const [anchorEl, setAnchorEl] = useState(null);
+  const { allStudents, fetchAllStudents } = usePlacement();
+
+  useEffect(() => {
+    fetchAllStudents();
+  }, []);
 
   const handleNotificationClick = (event) => setAnchorEl(event.currentTarget);
   const handleNotificationClose = () => setAnchorEl(null);
+
+  const totalStudents = allStudents.length;
+  const onCampus = allStudents.filter(s => s.status === "OnCampus").length;
+  const offCampus = allStudents.filter(s => s.status === "OffCampus").length;
+  const higherStudies = allStudents.filter(s => s.status === "HigherStudies").length;
+  const entrepreneurship = allStudents.filter(s => s.status === "Entrepreneurship").length;
+  const business = allStudents.filter(s => s.status === "Business").length;
+  const placed = onCampus + offCampus;
+
+  const summaryData = [
+    { label: "Total Students", value: totalStudents },
+    { label: "Placed", value: placed },
+    { label: "On Campus", value: onCampus },
+    { label: "Off Campus", value: offCampus },
+    { label: "Higher Studies", value: higherStudies },
+    { label: "Entrepreneurship", value: entrepreneurship },
+    { label: "Business", value: business },
+  ];
 
   return (
     <>
@@ -226,15 +382,7 @@ const Dashboard = ({ user = "User", handleLogout, batch = "2021-2025" }) => {
         </Typography>
 
         <Grid container spacing={3} mt={1}>
-          {[
-            { label: "Total Students", value: 120 },
-            { label: "Placed", value: 85 },
-            { label: "On Campus", value: 60 },
-            { label: "Off Campus", value: 25 },
-            { label: "Higher Studies", value: 15 },
-            { label: "Entrepreneurship", value: 5 },
-            { label: "Business", value: 3 },
-          ].map(({ label, value }) => (
+          {summaryData.map(({ label, value }) => (
             <Grid item xs={12} sm={6} md={4} lg={3} key={label}>
               <SummaryCard>
                 <CardContent>

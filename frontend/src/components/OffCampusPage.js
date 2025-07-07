@@ -16,11 +16,13 @@ import {
   Typography,
   Paper
 } from "@mui/material";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { usePlacement } from "../MainTable/MainPlacementTable";
 
 const OffCampusPage = () => {
+  const { allStudents, addStudent, fetchAllStudents } = usePlacement();
   const [open, setOpen] = useState(false);
-  const [students, setStudents] = useState([]);
+
   const [form, setForm] = useState({
     regNo: "",
     name: "",
@@ -32,28 +34,38 @@ const OffCampusPage = () => {
     package: ""
   });
 
+  useEffect(() => {
+    fetchAllStudents(); // Ensure we have latest data
+  }, []);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setForm({ ...form, [name]: value });
+    setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = () => {
-    const newEntry = {
+  const handleSubmit = async () => {
+    const newStudent = {
       ...form,
       status: "OffCampus"
     };
-    setStudents([...students, newEntry]);
-    setForm({
-      regNo: "",
-      name: "",
-      email: "",
-      department: "",
-      company: "",
-      offerType: "",
-      stipend: "",
-      package: ""
-    });
-    setOpen(false);
+
+    try {
+      await addStudent(newStudent);
+      await fetchAllStudents();
+      setForm({
+        regNo: "",
+        name: "",
+        email: "",
+        department: "",
+        company: "",
+        offerType: "",
+        stipend: "",
+        package: ""
+      });
+      setOpen(false);
+    } catch (err) {
+      console.error("Failed to add student:", err);
+    }
   };
 
   return (
@@ -101,19 +113,21 @@ const OffCampusPage = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {students.map((s, idx) => (
-              <TableRow key={idx}>
-                <TableCell>{idx + 1}</TableCell>
-                <TableCell>{s.regNo}</TableCell>
-                <TableCell>{s.name}</TableCell>
-                <TableCell>{s.department}</TableCell>
-                <TableCell>{s.status}</TableCell>
-                <TableCell>{s.company}</TableCell>
-                <TableCell>{s.offerType}</TableCell>
-                <TableCell>{s.stipend}</TableCell>
-                <TableCell>{s.package}</TableCell>
-              </TableRow>
-            ))}
+            {allStudents
+              .filter((s) => s.status === "OffCampus")
+              .map((s, idx) => (
+                <TableRow key={idx}>
+                  <TableCell>{idx + 1}</TableCell>
+                  <TableCell>{s.regNo}</TableCell>
+                  <TableCell>{s.name}</TableCell>
+                  <TableCell>{s.department}</TableCell>
+                  <TableCell>{s.status}</TableCell>
+                  <TableCell>{s.company}</TableCell>
+                  <TableCell>{s.offerType}</TableCell>
+                  <TableCell>{s.stipend}</TableCell>
+                  <TableCell>{s.package}</TableCell>
+                </TableRow>
+              ))}
           </TableBody>
         </Table>
       </TableContainer>
@@ -122,3 +136,4 @@ const OffCampusPage = () => {
 };
 
 export default OffCampusPage;
+

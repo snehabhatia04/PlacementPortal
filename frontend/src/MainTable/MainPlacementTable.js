@@ -446,23 +446,118 @@
 
 // export const usePlacement = () => useContext(PlacementContext);
 
+// import axios from "axios";
+// import React, { createContext, useContext, useEffect, useState } from "react";
+
+// const PlacementContext = createContext();
+
+// export const PlacementProvider = ({ children }) => {
+//   const [students, setStudents] = useState([]);
+//   const [department, setDepartment] = useState("");
+//   const [filter, setFilter] = useState("default");
+
+//   // ✅ Auto-refetch when department or filter changes
+//   useEffect(() => {
+//     if (department) {
+//       fetchStudentsByDepartment(department, filter);
+//     }
+//   }, [department, filter]);
+
+//   const fetchStudentsByDepartment = async (dept, selectedFilter = "default") => {
+//     if (!dept) return;
+
+//     try {
+//       const response = await axios.get("http://localhost:5001/students/department", {
+//         params: {
+//           dept,
+//           filter: selectedFilter !== "default" ? selectedFilter : undefined,
+//         },
+//       });
+
+//       console.log("✅ Students fetched:", response.data);
+//       setStudents(response.data || []);
+//     } catch (error) {
+//       console.error("❌ Failed to fetch students by department:", error);
+//       setStudents([]);
+//     }
+//   };
+
+//   // ✅ Triggers useEffect to auto-fetch
+//   const handleFilterChange = (newFilter) => {
+//     setFilter(newFilter);
+//   };
+
+//   const updateStudentOffers = async (regNo, newOffer) => {
+//     const student = students.find((s) => s.regNo === regNo);
+//     if (!student) return;
+
+//     const updatedOffers = [...(student.offers || []), newOffer];
+//     const payload = { ...student, offers: updatedOffers };
+
+//     try {
+//       const response = await axios.put("http://localhost:5001/students/", payload);
+//       console.log("✅ Offers updated:", response.data);
+//       setStudents((prev) =>
+//         prev.map((s) =>
+//           s.regNo === regNo ? { ...s, offers: updatedOffers } : s
+//         )
+//       );
+//     } catch (error) {
+//       console.error("❌ Failed to update offers:", error.response?.data || error.message);
+//     }
+//   };
+
+//   return (
+//     <PlacementContext.Provider
+//       value={{
+//         students,
+//         setStudents,
+//         department,
+//         setDepartment,
+//         filter,
+//         setFilter: handleFilterChange,
+//         fetchStudentsByDepartment,
+//         updateStudentOffers,
+//       }}
+//     >
+//       {children}
+//     </PlacementContext.Provider>
+//   );
+// };
+
+// export const usePlacement = () => useContext(PlacementContext);
+
 import axios from "axios";
 import React, { createContext, useContext, useEffect, useState } from "react";
 
 const PlacementContext = createContext();
 
 export const PlacementProvider = ({ children }) => {
-  const [students, setStudents] = useState([]);
+  const [students, setStudents] = useState([]);         // department-wise
+  const [allStudents, setAllStudents] = useState([]);   // all students
   const [department, setDepartment] = useState("");
   const [filter, setFilter] = useState("default");
 
-  // ✅ Auto-refetch when department or filter changes
+  // Auto-fetch department students
   useEffect(() => {
     if (department) {
       fetchStudentsByDepartment(department, filter);
     }
   }, [department, filter]);
 
+  // 🔶 Fetch all students (for dashboard, offcampus, etc.)
+  const fetchAllStudents = async () => {
+    try {
+      const response = await axios.get("http://localhost:5001/students/");
+      console.log("✅ All students fetched:", response.data);
+      setAllStudents(response.data || []);
+    } catch (error) {
+      console.error("❌ Failed to fetch all students:", error);
+      setAllStudents([]);
+    }
+  };
+
+  // 🔶 Fetch students by department + optional filter
   const fetchStudentsByDepartment = async (dept, selectedFilter = "default") => {
     if (!dept) return;
 
@@ -474,21 +569,36 @@ export const PlacementProvider = ({ children }) => {
         },
       });
 
-      console.log("✅ Students fetched:", response.data);
+      console.log("✅ Department students fetched:", response.data);
       setStudents(response.data || []);
     } catch (error) {
-      console.error("❌ Failed to fetch students by department:", error);
+      console.error("❌ Failed to fetch department students:", error);
       setStudents([]);
     }
   };
 
-  // ✅ Triggers useEffect to auto-fetch
-  const handleFilterChange = (newFilter) => {
-    setFilter(newFilter);
+  // 🔶 Add student (to backend + context state)
+  const addStudent = async (student) => {
+    try {
+      const response = await axios.post("http://localhost:5001/students/", student);
+      const savedStudent = response.data;
+      await fetchAllStudents();
+      // Update both lists
+      setAllStudents(prev => [...prev, savedStudent]);
+      if (savedStudent.department?.toLowerCase() === department?.toLowerCase()) {
+        setStudents(prev => [...prev, savedStudent]);
+      }
+
+      return savedStudent;
+    } catch (error) {
+      console.error("❌ Failed to add student:", error.response?.data || error.message);
+      throw error;
+    }
   };
 
+  // 🔶 Update offers
   const updateStudentOffers = async (regNo, newOffer) => {
-    const student = students.find((s) => s.regNo === regNo);
+    const student = allStudents.find((s) => s.regNo === regNo);
     if (!student) return;
 
     const updatedOffers = [...(student.offers || []), newOffer];
@@ -497,19 +607,31 @@ export const PlacementProvider = ({ children }) => {
     try {
       const response = await axios.put("http://localhost:5001/students/", payload);
       console.log("✅ Offers updated:", response.data);
-      setStudents((prev) =>
-        prev.map((s) =>
-          s.regNo === regNo ? { ...s, offers: updatedOffers } : s
-        )
+
+      setAllStudents(prev =>
+        prev.map(s => s.regNo === regNo ? { ...s, offers: updatedOffers } : s)
       );
+
+      // Also update department state if applicable
+      if (student.department?.toLowerCase() === department?.toLowerCase()) {
+        setStudents(prev =>
+          prev.map(s => s.regNo === regNo ? { ...s, offers: updatedOffers } : s)
+        );
+      }
     } catch (error) {
       console.error("❌ Failed to update offers:", error.response?.data || error.message);
     }
   };
 
+  // 🔶 Handle placement filter (placed/unplaced/etc)
+  const handleFilterChange = (newFilter) => {
+    setFilter(newFilter);
+  };
+
   return (
     <PlacementContext.Provider
       value={{
+        // scoped to current department
         students,
         setStudents,
         department,
@@ -517,6 +639,11 @@ export const PlacementProvider = ({ children }) => {
         filter,
         setFilter: handleFilterChange,
         fetchStudentsByDepartment,
+
+        // global
+        allStudents,
+        fetchAllStudents,
+        addStudent,
         updateStudentOffers,
       }}
     >

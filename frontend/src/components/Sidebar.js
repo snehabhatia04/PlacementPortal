@@ -361,6 +361,10 @@ const Sidebar = () => {
   const [openDialog, setOpenDialog] = useState(false);
   const [newCompany, setNewCompany] = useState("");
   const location = useLocation();
+  useEffect(() => {
+  setOpenStudent(false);
+  setOpenCompany(false);
+}, [location.pathname]);
 
   // Get user from localStorage
   let currentUser = { role: "" };

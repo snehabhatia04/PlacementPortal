@@ -16,12 +16,17 @@ const roles = [
   "admin", "faculty", "fpc", "placement_team", "dean", "assistant_dean", "vc"
 ];
 
+const departments = [
+  "CSE", "AIML", "IT", "IOT", "CCE", "Data Science", "ECE"
+];
+
 const CreateUserPage = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
+    password: "",
     role: "",
-    password: ""
+    department: ""
   });
 
   const handleChange = (e) => {
@@ -30,7 +35,6 @@ const CreateUserPage = () => {
   };
 
   const handleSubmit = async () => {
-    // API call goes here
     try {
       const res = await fetch("http://localhost:5002/users", {
         method: "POST",
@@ -40,7 +44,7 @@ const CreateUserPage = () => {
 
       if (res.ok) {
         alert("User created successfully");
-        setFormData({ email: "", role: "", password: "" });
+        setFormData({ email: "", password: "", role: "", department: "" });
         setDialogOpen(false);
       } else {
         alert("Failed to create user");
@@ -50,6 +54,9 @@ const CreateUserPage = () => {
       console.error(error);
     }
   };
+
+  // Show department dropdown only for these roles
+  const needsDepartment = ["faculty", "fpc", "placement_team", "admin"].includes(formData.role);
 
   return (
     <Box p={3}>
@@ -67,6 +74,7 @@ const CreateUserPage = () => {
             type="email"
             value={formData.email}
             onChange={handleChange}
+            required
           />
           <TextField
             label="Password"
@@ -74,6 +82,7 @@ const CreateUserPage = () => {
             type="password"
             value={formData.password}
             onChange={handleChange}
+            required
           />
           <TextField
             label="Role"
@@ -81,11 +90,27 @@ const CreateUserPage = () => {
             select
             value={formData.role}
             onChange={handleChange}
+            required
           >
             {roles.map(role => (
               <MenuItem key={role} value={role}>{role}</MenuItem>
             ))}
           </TextField>
+
+          {needsDepartment && (
+            <TextField
+              label="Department"
+              name="department"
+              select
+              value={formData.department}
+              onChange={handleChange}
+              required
+            >
+              {departments.map(dep => (
+                <MenuItem key={dep} value={dep}>{dep}</MenuItem>
+              ))}
+            </TextField>
+          )}
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDialogOpen(false)}>Cancel</Button>
