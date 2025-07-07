@@ -1277,31 +1277,242 @@
 
 // export default App;
 
-import React, { useEffect, useMemo, useState } from "react";
-import {
-  Routes,
-  Route,
-  Navigate,
-  useLocation,
-} from "react-router-dom";
+// import {
+//   Box,
+//   createTheme,
+//   CssBaseline,
+//   ThemeProvider,
+// } from "@mui/material";
+// import { useEffect, useMemo, useState } from "react";
+// import {
+//   Navigate,
+//   Route,
+//   Routes,
+//   useLocation,
+// } from "react-router-dom";
+
+// // Components
+// import BatchSelectionPage from "./components/BatchSelectionPage";
+// import BranchDetails from "./components/BranchDetails";
+// import CreateUserPage from "./components/CreateUserPage";
+// import Dashboard from "./components/Dashboard";
+// import LoginPage from "./components/LoginPage";
+// import OffCampusPage from "./components/OffCampusPage";
+// import PlacementTable from "./components/PlacementTable";
+// import Sidebar from "./components/Sidebar";
+
+
+// // Context
+// import { PlacementProvider } from "./MainTable/MainPlacementTable";
+
+// const AppRoutes = ({
+//   isAuthenticated,
+//   token,
+//   handleLoginSuccess,
+//   handleLogout,
+//   darkMode,
+//   setDarkMode,
+//   selectedBatch,
+//   setSelectedBatch
+// }) => {
+//   const location = useLocation();
+//   const isLoginPage = location.pathname === "/login";
+
+//   let currentUser = { role: "" };
+//   try {
+//     const userRaw = localStorage.getItem("user");
+//     if (userRaw) currentUser = JSON.parse(userRaw);
+//   } catch (e) {
+//     console.error("Failed to parse user from localStorage:", e);
+//   }
+
+//   const ProtectedRoute = ({ children, roles }) => {
+//     if (!roles.includes(currentUser.role)) {
+//       return <Navigate to="/" replace />;
+//     }
+//     return children;
+//   };
+
+//   return (
+//     <Box display="flex">
+//       {!isLoginPage && isAuthenticated && selectedBatch && (
+//         <Sidebar darkMode={darkMode} setDarkMode={setDarkMode} />
+//       )}
+//       <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
+//         <Routes>
+//           <Route
+//             path="/login"
+//             element={<LoginPage onLoginSuccess={handleLoginSuccess} />}
+//           />
+//           <Route
+//             path="/"
+//             element={
+//               isAuthenticated ? (
+//                 selectedBatch ? (
+//                   <Dashboard token={token} handleLogout={handleLogout} />
+//                 ) : (
+//                   <Navigate to="/select-batch" />
+//                 )
+//               ) : (
+//                 <Navigate to="/login" />
+//               )
+//             }
+//           />
+//           <Route
+//             path="/select-batch"
+//             element={
+//               isAuthenticated ? (
+//                 <BatchSelectionPage setSelectedBatch={setSelectedBatch} />
+//               ) : (
+//                 <Navigate to="/login" />
+//               )
+//             }
+//           />
+//           <Route
+//             path="/placements"
+//             element={
+//               isAuthenticated ? <PlacementTable /> : <Navigate to="/login" />
+//             }
+//           />
+//           <Route
+//             path="/off"
+//             element={
+//               isAuthenticated ? <OffCampusPage /> : <Navigate to="/login" />
+//             }
+//           />
+//           <Route
+//   path="/students/:branch"
+//   element={
+//     isAuthenticated && selectedBatch ? (
+//       <BranchDetails />
+//     ) : (
+//       <Navigate to="/login" />
+//     )
+//   }
+// />
+
+//           <Route
+//             path="/create-user"
+//             element={
+//               isAuthenticated ? (
+//                 <ProtectedRoute roles={["admin"]}>
+//                   <CreateUserPage />
+//                 </ProtectedRoute>
+//               ) : (
+//                 <Navigate to="/login" />
+//               )
+//             }
+//           />
+          
+//         </Routes>
+//       </Box>
+//     </Box>
+//   );
+// };
+
+// const App = () => {
+//   const [darkMode, setDarkMode] = useState(false);
+//   const [isAuthenticated, setIsAuthenticated] = useState(false);
+//   const [token, setToken] = useState(null);
+//   const [selectedBatch, setSelectedBatch] = useState(null);
+
+//   useEffect(() => {
+//     const storedToken = localStorage.getItem("token");
+//     const user = localStorage.getItem("user");
+//     const batch = localStorage.getItem("selectedBatch");
+
+//     if (storedToken && user) {
+//       setIsAuthenticated(true);
+//       setToken(storedToken);
+//     }
+
+//     if (batch) {
+//       setSelectedBatch(batch);
+//     }
+//   }, []);
+
+//   const theme = useMemo(
+//     () =>
+//       createTheme({
+//         palette: {
+//           mode: darkMode ? "dark" : "light",
+//           primary: { main: "#E87722" },
+//           background: { default: darkMode ? "#121212" : "#f9f9f9" },
+//         },
+//         typography: {
+//           fontFamily: "'Poppins', 'Segoe UI', sans-serif",
+//         },
+//       }),
+//     [darkMode]
+//   );
+
+//   const handleLoginSuccess = ({ token, user }) => {
+//     setIsAuthenticated(true);
+//     setToken(token);
+//     localStorage.setItem("token", token);
+
+//     const fallbackUser = {
+//       email: user?.email || "admin@muj.ac.in",
+//       role: user?.role || "admin",
+//     };
+
+//     localStorage.setItem("user", JSON.stringify(user || fallbackUser));
+//     setSelectedBatch(localStorage.getItem("selectedBatch"));
+//   };
+
+//   const handleLogout = () => {
+//     setIsAuthenticated(false);
+//     setToken(null);
+//     setSelectedBatch(null);
+//     localStorage.clear();
+//   };
+
+//   return (
+//     <ThemeProvider theme={theme}>
+//       <CssBaseline />
+//       <PlacementProvider>
+//         <AppRoutes
+//           isAuthenticated={isAuthenticated}
+//           token={token}
+//           handleLoginSuccess={handleLoginSuccess}
+//           handleLogout={handleLogout}
+//           darkMode={darkMode}
+//           setDarkMode={setDarkMode}
+//           selectedBatch={selectedBatch}
+//           setSelectedBatch={setSelectedBatch}
+//         />
+//       </PlacementProvider>
+//     </ThemeProvider>
+//   );
+// };
+
+// export default App;
+
+
 import {
   Box,
-  CssBaseline,
   createTheme,
+  CssBaseline,
   ThemeProvider,
 } from "@mui/material";
+import { useEffect, useMemo, useState } from "react";
+import {
+  Navigate,
+  Route,
+  Routes,
+  useLocation,
+} from "react-router-dom";
 
 // Components
-import Sidebar from "./components/Sidebar";
-import LoginPage from "./components/LoginPage";
-import Dashboard from "./components/Dashboard";
 import BatchSelectionPage from "./components/BatchSelectionPage";
+import BranchDetails from "./components/BranchDetails";
+import CompanyPage from "./components/CompanyPage"; // ✅ added
+import CreateUserPage from "./components/CreateUserPage";
+import Dashboard from "./components/Dashboard";
+import LoginPage from "./components/LoginPage";
 import OffCampusPage from "./components/OffCampusPage";
 import PlacementTable from "./components/PlacementTable";
-import CreateUserPage from "./components/CreateUserPage";
-import BranchDetails from "./components/BranchDetails";
-import StudentDetails from "./components/StudentDetails"; 
-
+import Sidebar from "./components/Sidebar";
 
 // Context
 import { PlacementProvider } from "./MainTable/MainPlacementTable";
@@ -1382,16 +1593,15 @@ const AppRoutes = ({
             }
           />
           <Route
-  path="/students/:branch"
-  element={
-    isAuthenticated && selectedBatch ? (
-      <BranchDetails />
-    ) : (
-      <Navigate to="/login" />
-    )
-  }
-/>
-
+            path="/students/:branch"
+            element={
+              isAuthenticated && selectedBatch ? (
+                <BranchDetails />
+              ) : (
+                <Navigate to="/login" />
+              )
+            }
+          />
           <Route
             path="/create-user"
             element={
@@ -1399,6 +1609,17 @@ const AppRoutes = ({
                 <ProtectedRoute roles={["admin"]}>
                   <CreateUserPage />
                 </ProtectedRoute>
+              ) : (
+                <Navigate to="/login" />
+              )
+            }
+          />
+          {/* ✅ New route for company page */}
+          <Route
+            path="/company/:companyName"
+            element={
+              isAuthenticated ? (
+                <CompanyPage />
               ) : (
                 <Navigate to="/login" />
               )
