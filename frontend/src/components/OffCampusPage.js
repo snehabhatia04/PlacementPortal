@@ -107,7 +107,7 @@ const OffCampusPage = () => {
         <Table>
           <TableHead sx={{ backgroundColor: "#E87722" }}>
             <TableRow>
-              {["S.No", "Reg No", "Name", "Branch", "Status", "Company", "Offer Type", "Stipend", "Package"].map((h) => (
+              {["S.No", "Reg No", "Name", "Branch", "Placement Status", "Company", "Offer Type", "Stipend", "Package"].map((h) => (
                 <TableCell key={h} sx={{ color: "white", fontWeight: "bold" }}>{h}</TableCell>
               ))}
             </TableRow>

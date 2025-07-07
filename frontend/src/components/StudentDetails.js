@@ -325,27 +325,21 @@
 // };
 
 // export default StudentDetails;
-
-import {
-  Box,
-  CircularProgress,
-  Divider,
-  Typography,
-} from "@mui/material";
 import React, { useState, useEffect } from "react";
-import PlacementTable from "./PlacementTable";
+import { Box, CircularProgress, Divider, Typography } from "@mui/material";
 import { useParams } from "react-router-dom";
-
+import BranchDetails from "./BranchDetails"; // ✅ Import it
+import PlacementTable from "./PlacementTable"; // or replace with OverviewTable
 
 const StudentDetails = () => {
-   const { branch } = useParams();
+  const { branch } = useParams();
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     setLoading(true);
-    const timer = setTimeout(() => setLoading(false), 500); // simulate short load
+    const timer = setTimeout(() => setLoading(false), 500);
     return () => clearTimeout(timer);
-  }, []);
+  }, [branch]); // re-run if branch changes
 
   return (
     <Box sx={{ flexGrow: 1, padding: 3 }}>
@@ -356,8 +350,10 @@ const StudentDetails = () => {
 
       {loading ? (
         <CircularProgress />
+      ) : branch ? (
+        <BranchDetails />
       ) : (
-        <PlacementTable /> // ← no dummy props passed
+        <PlacementTable />
       )}
     </Box>
   );

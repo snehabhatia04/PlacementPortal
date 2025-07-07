@@ -255,6 +255,81 @@
 
 // export default BranchDetails;
 
+// import {
+//   Box,
+//   Button,
+//   FormControl,
+//   InputLabel,
+//   MenuItem,
+//   Select,
+//   Typography,
+// } from "@mui/material";
+// import React, { useEffect } from "react";
+// import { Link, useParams } from "react-router-dom";
+// import { usePlacement } from "../MainTable/MainPlacementTable";
+// import PlacementTable from "./PlacementTable";
+
+// const BranchDetails = () => {
+//   const { branch } = useParams();
+//   const {
+//     students,
+//     fetchStudentsByDepartment,
+//     setDepartment, // ✅ important!
+//     filter,
+//     setFilter,
+//   } = usePlacement();
+
+//   // ✅ Set department & fetch
+//   useEffect(() => {
+//     if (branch) {
+//       const upperBranch = branch.toUpperCase();
+//       setDepartment(upperBranch); // ✅ this updates context
+//       fetchStudentsByDepartment(upperBranch, filter); // fetch with filter
+//     }
+//   }, [branch, filter]);
+
+//   return (
+//     <Box sx={{ flexGrow: 1, padding: 3 }}>
+//       <Typography variant="h5" sx={{ fontWeight: "bold", mb: 2 }}>
+//         {branch.toUpperCase()} - Student Details
+//       </Typography>
+
+//       <Box
+//         sx={{
+//           display: "flex",
+//           justifyContent: "space-between",
+//           alignItems: "center",
+//           mb: 2,
+//         }}
+//       >
+//         <Button
+//           variant="contained"
+//           component={Link}
+//           to={`/summary/${branch.toLowerCase()}`}
+//           sx={{ backgroundColor: "#ec7000", color: "#fff" }}
+//         >
+//           View {branch.toUpperCase()} Summary
+//         </Button>
+
+//         <FormControl size="small" sx={{ minWidth: 200 }}>
+//           <InputLabel>Filter</InputLabel>
+//           <Select
+//             value={filter}
+//             label="Filter"
+//             onChange={(e) => setFilter(e.target.value)}
+//           >
+//             <MenuItem value="default">Default</MenuItem>
+//             <MenuItem value="stipend">Stipend High to Low</MenuItem>
+//             <MenuItem value="placed">Placed Students</MenuItem>
+//             <MenuItem value="notPlaced">Not placed Students</MenuItem>
+//           </Select>
+//         </FormControl>
+//       </Box>
+// <PlacementTable studentData={students || []} />
+
+
+// export default BranchDetails;
+
 import {
   Box,
   Button,
@@ -274,17 +349,17 @@ const BranchDetails = () => {
   const {
     students,
     fetchStudentsByDepartment,
-    setDepartment, // ✅ important!
+    setDepartment,
     filter,
     setFilter,
   } = usePlacement();
 
-  // ✅ Set department & fetch
+  // Fetch students when branch or filter changes
   useEffect(() => {
     if (branch) {
       const upperBranch = branch.toUpperCase();
-      setDepartment(upperBranch); // ✅ this updates context
-      fetchStudentsByDepartment(upperBranch, filter); // fetch with filter
+      setDepartment(upperBranch);
+      fetchStudentsByDepartment(upperBranch, filter);
     }
   }, [branch, filter]);
 
@@ -326,11 +401,8 @@ const BranchDetails = () => {
         </FormControl>
       </Box>
 
-      {students && students.length > 0 ? (
-        <PlacementTable studentData={students} />
-      ) : (
-        <Typography>No students found for {branch.toUpperCase()}</Typography>
-      )}
+      {/* ✅ Show placement table even if empty */}
+      <PlacementTable studentData={students || []} />
     </Box>
   );
 };
