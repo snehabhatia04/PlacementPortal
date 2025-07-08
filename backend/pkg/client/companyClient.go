@@ -9,7 +9,7 @@ import (
 	"net/http"
 
 	"placementportal/backend/pkg/model"
-	
+	"placementportal/backend/portal_service/config"
 )
 
 // CompanyClient struct

@@ -1,23 +1,23 @@
 package main
 
-import (
-	"fmt"
+// import (
+// 	"fmt"
 
-	"golang.org/x/crypto/bcrypt"
-)
+// 	"golang.org/x/crypto/bcrypt"
+// )
 
-func main() {
-	// Replace this with your hashed password copied from DB
-	hashedPassword := "$2a$10$5zew8JAI7CGPB3X75GZjB.i9vpDFDiGmuBGh.Ws57Z.3LKLrKb3l6"
+// func main() {
+// 	// Replace this with your hashed password copied from DB
+// 	hashedPassword := "$2a$10$Nqvw7j0JPcc9JTmXkxdAEe.ocn0wdgYPQIV/55bhhwN2b.w8C03HO"
 
-	// Replace this with the plaintext password you want to check
-	plaintextPassword := "fpc123"
+// 	// Replace this with the plaintext password you want to check
+// 	plaintextPassword := "fpc123"
 
-	err := bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(plaintextPassword))
-	if err != nil {
-		fmt.Println("❌ Password does NOT match!")
-	} else {
-		fmt.Println("✅ Password matches!")
-	}
-}
+// 	err := bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(plaintextPassword))
+// 	if err != nil {
+// 		fmt.Println("❌ Password does NOT match!")
+// 	} else {
+// 		fmt.Println("✅ Password matches!")
+// 	}
+// }
 
