@@ -80,74 +80,7 @@ const PlacementTable = ({ studentData = [], companyView = null }) => {
     XLSX.writeFile(wb, "students_export.xlsx");
   };
 
-//   const handleImportExcel = (e) => {
-//   const file = e.target.files[0];
-//   const reader = new FileReader();
-
-//   reader.onload = async (evt) => {
-//     const bstr = evt.target.result;
-//     const wb = XLSX.read(bstr, { type: "binary" });
-//     const ws = wb.Sheets[wb.SheetNames[0]];
-//     const data = XLSX.utils.sheet_to_json(ws, { header: 1 });
-//     const headers = data[0];
-//     const rows = data.slice(1);
-
-//     const newData = rows.map((row) => {
-//       const obj = {};
-//       headers.forEach((header, idx) => {
-//         obj[header] = row[idx];
-//       });
-
-//       const companies = [];
-//       if (obj.Company && obj.Company !== "-" && obj.Company !== "No offers from this company") {
-//         companies.push({
-//           company: obj.Company,
-//           offer_type: obj["Offer Type"] || "",
-//           stipend: obj.Stipend || "",
-//           internship: obj.Internship || "",
-//           package: obj["Package (LPA)"] || "",
-//         });
-//       }
-
-//       if (!obj["Reg No."] || !obj.Name) {
-//         console.warn("Skipping student with missing Reg No. or Name:", obj);
-//         return null;
-//       }
-
-//       return {
-//         regNo: String(obj["Reg No."]).trim(),
-//         name: obj.Name.trim(),
-//         email: obj.Email || "",
-//         department: obj.Branch || "",
-//         higher_study_college: obj["Higher Study"] || "",
-//         firm_name: obj["Firm Name"] || "",
-//         role_in_firm: obj["Role In Firm"] || "",
-//         offers: companies,
-//       };
-//     }).filter(Boolean);
-
-//     console.log("Imported Data to be added:", newData);
-
-//     let success = 0, fail = 0;
-
-//     await Promise.allSettled(newData.map(student =>
-//       addStudent(student)
-//         .then(() => { success++; })
-//         .catch(err => {
-//           fail++;
-//           console.error("Failed to add student:", student, err.response?.data || err.message);
-//         })
-//     ));
-
-//     console.log(`Import completed. Success: ${success}, Failed: ${fail}`);
-//     await fetchAllStudents();
-//     alert(`Import completed. Success: ${success}, Failed: ${fail}`);
-//   };
-
-//   reader.readAsBinaryString(file);
-// };
-
-
+  
   const handleImportExcel = async (e) => {
   const file = e.target.files[0];
   if (!file) return;

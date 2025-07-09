@@ -16,6 +16,7 @@ import {
 // Components
 import BatchSelectionPage from "./components/BatchSelectionPage";
 import BranchDetails from "./components/BranchDetails";
+import BranchSummary from "./components/BranchSummary";
 import CompanyPage from "./components/CompanyPage";
 import CreateUserPage from "./components/CreateUserPage";
 import Dashboard from "./components/Dashboard";
@@ -135,6 +136,16 @@ const AppRoutes = ({
             path="/company/:companyName"
             element={
               isAuthenticated ? <CompanyPage /> : <Navigate to="/login" />
+            }
+          />
+          <Route
+            path="/summary/:branch"
+            element={
+              isAuthenticated && selectedBatch ? (
+                <BranchSummary />
+              ) : (
+                <Navigate to="/login" />
+              )
             }
           />
         </Routes>

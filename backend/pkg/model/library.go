@@ -66,6 +66,7 @@ type Student struct {
 	MobileNo   string `json:"mobile_no" db:"mobile_no"`
 	SessionID  int    `json:"session_id" db:"session_id"`
 	Companies  []CompanyStudent  `json:"companies,omitempty"`
+	Placements  []StudentPlacement  `json:"placements"`
 }
 
 // Mapping students selected by companies

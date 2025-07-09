@@ -44,19 +44,48 @@ func (sc *StudentController) GetAllStudentsHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, students)
 }
 
+// func (sc *StudentController) GetStudentByRegNoHandler(c *gin.Context) {
+// 	regNo := c.Param("reg_no")
+// 	if regNo == "" {
+// 		c.JSON(http.StatusBadRequest, gin.H{"error": "Registration number is required"})
+// 		return
+// 	}
+// 	student, err := sc.Repo.GetStudentByRegNo(c.Request.Context(), regNo)
+// 	if err != nil {
+// 		c.JSON(http.StatusNotFound, gin.H{"error": "Student not found"})
+// 		return
+// 	}
+// 	c.JSON(http.StatusOK, student)
+// }
+
 func (sc *StudentController) GetStudentByRegNoHandler(c *gin.Context) {
 	regNo := c.Param("reg_no")
 	if regNo == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Registration number is required"})
 		return
 	}
-	student, err := sc.Repo.GetStudentByRegNo(c.Request.Context(), regNo)
+
+	sessionIDStr := c.Query("session_id")
+	if sessionIDStr == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Session ID is required"})
+		return
+	}
+
+	sessionID, err := strconv.Atoi(sessionIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid session ID"})
+		return
+	}
+
+	student, err := sc.Repo.GetStudentByRegNo(c.Request.Context(), regNo, sessionID)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Student not found"})
 		return
 	}
+
 	c.JSON(http.StatusOK, student)
 }
+
 
 func (sc *StudentController) CreateStudentHandler(c *gin.Context) {
 	var student model.Student
@@ -133,7 +162,10 @@ func (sc *StudentController) DeleteStudentHandler(c *gin.Context) {
 func (sc *StudentController) GetStudentsByDepartment(c *gin.Context) {
 	dept := c.Query("dept")
 	filter := c.Query("filter")
-	log.Println("Received department query:", dept, "with filter:", filter)
+	sessionIDStr := c.Query("session_id")
+
+	log.Println("Received department query:", dept, "with filter:", filter, "and session:", sessionIDStr)
+
 	if dept == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Department is required"})
 		return
@@ -141,11 +173,36 @@ func (sc *StudentController) GetStudentsByDepartment(c *gin.Context) {
 	if strings.ToLower(dept) == "all" {
 		dept = "admin"
 	}
+
+	if sessionIDStr == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Session ID is required"})
+		return
+	}
+	sessionID, err := strconv.Atoi(sessionIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid session ID"})
+		return
+	}
+
+	// Fetch students from repo
 	students, err := sc.Repo.GetStudentsByDepartment(c.Request.Context(), dept)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+
+	// Attach placements to each student
+	for i, s := range students {
+	placements, err := sc.Repo.GetPlacementsByRegNo(c.Request.Context(), s.RegNo, sessionID)
+	if err != nil {
+		log.Println("Error fetching placements for student:", s.RegNo, err)
+		placements = []model.StudentPlacement{}
+	}
+	students[i].Placements = placements
+}
+
+
+	// Apply filter if any
 	switch filter {
 	case "maxpackage":
 		sort.SliceStable(students, func(i, j int) bool {
@@ -162,25 +219,70 @@ func (sc *StudentController) GetStudentsByDepartment(c *gin.Context) {
 	case "notplaced":
 		students = filterByPlacementStatus(students, "notplaced")
 	}
+
 	c.JSON(http.StatusOK, students)
 }
+
+
+// func filterByPlacementStatus(students []model.Student, status string) []model.Student {
+// 	var result []model.Student
+// 	for _, s := range students {
+// 		if len(s.Companies) == 0 && status == "notplaced" {
+// 			result = append(result, s)
+// 			continue
+// 		}
+// 		for _, c := range s.Companies {
+// 			if status == "placed" && (c.PPO || c.PPOI) {
+// 				result = append(result, s)
+// 				break
+// 			}
+// 		}
+// 	}
+// 	return result
+// }
 
 func filterByPlacementStatus(students []model.Student, status string) []model.Student {
 	var result []model.Student
 	for _, s := range students {
-		if len(s.Companies) == 0 && status == "notplaced" {
+		// If no placement records
+		if len(s.Placements) == 0 && status == "notplaced" {
 			result = append(result, s)
 			continue
 		}
-		for _, c := range s.Companies {
-			if status == "placed" && (c.PPO || c.PPOI) {
-				result = append(result, s)
-				break
+
+		for _, p := range s.Placements {
+			switch status {
+			case "placed":
+				if p.PlacementStatus == "Placed" {
+					result = append(result, s)
+					break
+				}
+			case "higherstudy":
+				if p.PlacementStatus == "Higher Study" {
+					result = append(result, s)
+					break
+				}
+			case "entrepreneur":
+				if p.PlacementStatus == "Entrepreneur" {
+					result = append(result, s)
+					break
+				}
+			case "familybusiness":
+				if p.PlacementStatus == "Family Business" {
+					result = append(result, s)
+					break
+				}
+			case "notplaced":
+				if p.PlacementStatus == "" {
+					result = append(result, s)
+					break
+				}
 			}
 		}
 	}
 	return result
 }
+
 
 func maxPackage(companies []model.CompanyStudent) float64 {
 	var max float64
@@ -214,95 +316,6 @@ func isInternshipOffer(offerType string) bool {
 	return offerType == "PPO+I" || offerType == "I"
 }
 
-
-// func (sc *StudentController) ImportStudentsFromExcelHandler(c *gin.Context) {
-// 	fmt.Println("==== ImportStudentsFromExcelHandler hit ====")
-
-// 	fileHeader, err := c.FormFile("file")
-// 	if err != nil {
-// 		fmt.Println("Failed to get uploaded file:", err)
-// 		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to get uploaded file"})
-// 		return
-// 	}
-
-// 	file, _ := fileHeader.Open()
-// 	defer file.Close()
-
-// 	f, err := excelize.OpenReader(file)
-// 	if err != nil {
-// 		fmt.Println("Invalid Excel file:", err)
-// 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Excel file"})
-// 		return
-// 	}
-
-// 	rows, err := f.GetRows("Sheet1")
-// 	if err != nil {
-// 		fmt.Println("Failed to read Excel rows:", err)
-// 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to read Excel rows"})
-// 		return
-// 	}
-
-// 	validDepartments, err := sc.DeptRepo.GetAllDepartments(c.Request.Context())
-// 	if err != nil {
-// 		fmt.Println("Failed to fetch departments:", err)
-// 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch departments"})
-// 		return
-// 	}
-// 	deptMap := make(map[string]bool)
-// 	for _, dept := range validDepartments {
-// 		deptMap[dept.Name] = true
-// 	}
-
-// 	successCount, failCount := 0, 0
-// 	for i, row := range rows {
-// 		if i == 0 {
-// 			continue
-// 		}
-// 		if len(row) < 4 {
-// 			fmt.Printf("Row %d incomplete — skipped: %+v\n", i+1, row)
-// 			failCount++
-// 			continue
-// 		}
-
-// 		student := model.Student{
-//         	RegNo:      cleanValue(row[1]),
-//         	Name:       cleanValue(row[2]),
-//         	Email:      cleanValue(row[3]),
-// 	        Department: cleanValue(row[4]),
-
-// }
-
-//         fmt.Printf("Debug email at row %d: '%s'\n", i+1, student.Email)
-
-// 		if err := validateStudent(student); err != nil {
-// 			fmt.Printf("Row %d validation failed: %v\n", i+1, err)
-// 			failCount++
-// 			continue
-// 		}
-
-// 		if !deptMap[student.Department] {
-// 			fmt.Printf("Row %d invalid department: %s\n", i+1, student.Department)
-// 			failCount++
-// 			continue
-// 		}
-
-// 		if err := sc.Repo.CreateStudent(c.Request.Context(), &student); err != nil {
-// 			fmt.Printf("Row %d DB insert error: %v\n", i+1, err)
-// 			failCount++
-// 			continue
-// 		}
-
-// 		successCount++
-// 	}
-
-// 	fmt.Printf("Import completed — Success: %d, Failed: %d\n", successCount, failCount)
-
-// 	c.JSON(http.StatusOK, gin.H{
-// 		"message":      "Excel import completed",
-// 		"successCount": successCount,
-// 		"failCount":    failCount,
-// 	})
-// }
 
 func (sc *StudentController) ImportStudentsFromExcelHandler(c *gin.Context) {
 	fmt.Println("==== ImportStudentsFromExcelHandler hit ====")
@@ -437,9 +450,9 @@ func validateStudent(student model.Student) error {
 	if student.RegNo == "" {
 		return errors.New("registration number cannot be empty")
 	}
-	// if len(student.RegNo) != 9 {
-	// 	return errors.New("registration number must be exactly 9 characters")
-	// }
+	if len(student.RegNo) != 9 {
+		return errors.New("registration number must be exactly 9 characters")
+	}
 	if student.Name == "" {
 		return errors.New("student name cannot be empty")
 	}

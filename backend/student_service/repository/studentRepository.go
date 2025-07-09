@@ -50,22 +50,70 @@ func (r *StudentRepository) GetAllStudents(ctx context.Context, department strin
 }
 
 // Fetch a student by RegNo, with mapped companies
-func (r *StudentRepository) GetStudentByRegNo(ctx context.Context, regNo string) (*model.Student, error) {
+// func (r *StudentRepository) GetStudentByRegNo(ctx context.Context, regNo string) (*model.Student, error) {
+// 	var student model.Student
+
+// 	query := "SELECT reg_no, name, email, department FROM student WHERE reg_no = $1"
+// 	err := r.DB.GetContext(ctx, &student, query, regNo)
+// 	if err != nil {
+// 		return nil, fmt.Errorf("error fetching student: %w", err)
+// 	}
+
+// 	student.Companies, err = r.getCompanyMappingsForStudent(ctx, student.RegNo)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+
+// 	return &student, nil
+// }
+
+func (r *StudentRepository) GetPlacementsByRegNo(ctx context.Context, regNo string, sessionId int) ([]model.StudentPlacement, error) {
+	query := `SELECT id, reg_no, placement_status, company_name, offer_type, stipend, package, higher_study_college, firm_name
+			  FROM student_placements
+			  WHERE reg_no = $1 AND session_id = $2`
+	rows, err := r.DB.QueryContext(ctx, query, regNo, sessionId)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var placements []model.StudentPlacement
+	for rows.Next() {
+		var p model.StudentPlacement
+		err := rows.Scan(&p.ID, &p.RegNo, &p.PlacementStatus, &p.CompanyName, &p.OfferType, &p.Stipend, &p.Package, &p.HigherStudyCollege, &p.FirmName)
+		if err != nil {
+			return nil, err
+		}
+		placements = append(placements, p)
+	}
+	return placements, nil
+}
+
+func (r *StudentRepository) GetStudentByRegNo(ctx context.Context, regNo string, sessionId int) (*model.Student, error) {
 	var student model.Student
 
-	query := "SELECT reg_no, name, email, department FROM student WHERE reg_no = $1"
+	// Fetch core student details
+	query := "SELECT reg_no, name, email, department, mobile_no, session_id FROM student WHERE reg_no = $1"
 	err := r.DB.GetContext(ctx, &student, query, regNo)
 	if err != nil {
 		return nil, fmt.Errorf("error fetching student: %w", err)
 	}
 
+	// Fetch company mappings
 	student.Companies, err = r.getCompanyMappingsForStudent(ctx, student.RegNo)
+	if err != nil {
+		return nil, err
+	}
+
+	// Fetch placement records for this student (for given session)
+	student.Placements, err = r.GetPlacementsByRegNo(ctx, student.RegNo, sessionId)
 	if err != nil {
 		return nil, err
 	}
 
 	return &student, nil
 }
+
 
 // Helper: Fetch company mappings for a student
 func (r *StudentRepository) getCompanyMappingsForStudent(ctx context.Context, regNo string) ([]model.CompanyStudent, error) {
