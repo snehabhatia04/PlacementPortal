@@ -215,9 +215,21 @@ func (r *StudentRepository) GetStudentsByDepartment(ctx context.Context, dept st
 }
 
 
-// func (r *StudentRepository) CreateCompanyStudent(ctx context.Context, offer *model.CompanyStudent) error {
-// 	query := `INSERT INTO company_student (reg_no, company, offer_type, stipend, internship)
-// 	          VALUES ($1, $2, $3, $4, $5)`
-// 	_, err := r.DB.ExecContext(ctx, query, offer.RegNo, offer.CompanyName, offer.OfferType, offer.Stipend, offer.Internship)
-// 	return err
-// }
+func (r *StudentRepository) CreateCompanyStudent(ctx context.Context, offer *model.CompanyStudent) error {
+	query := `INSERT INTO company_student
+(company_name, reg_no, student_name, email, stipend, package, ppo, ppo_i, i, department)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`
+_, err := r.DB.ExecContext(ctx, query,
+	offer.CompanyName,
+	offer.RegNo,
+	offer.StudentName,
+	offer.Email,
+	offer.Stipend,
+	offer.Package,
+	offer.PPO,
+	offer.PPOI,
+	offer.I,
+	offer.Department)
+
+	return err
+}

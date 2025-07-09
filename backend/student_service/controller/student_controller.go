@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"placementportal/backend/pkg/model"
 	"placementportal/backend/student_service/repository"
+	"strconv"
 
 	"errors"
 	"log"
@@ -195,6 +196,114 @@ func cleanValue(val string) string {
 	return strings.TrimSpace(strings.ReplaceAll(strings.ReplaceAll(val, "\n", ""), "\r", ""))
 }
 
+func parseOfferTypeFlags(offerType string) (ppo, ppoi, i bool) {
+	switch strings.ToUpper(strings.TrimSpace(offerType)) {
+	case "PPO+I":
+		return true, true, true
+	case "PPO":
+		return true, false, false
+	case "I":
+		return false, false, true
+	default:
+		return false, false, false
+	}
+}
+
+func isInternshipOffer(offerType string) bool {
+	offerType = strings.ToUpper(strings.TrimSpace(offerType))
+	return offerType == "PPO+I" || offerType == "I"
+}
+
+
+// func (sc *StudentController) ImportStudentsFromExcelHandler(c *gin.Context) {
+// 	fmt.Println("==== ImportStudentsFromExcelHandler hit ====")
+
+// 	fileHeader, err := c.FormFile("file")
+// 	if err != nil {
+// 		fmt.Println("Failed to get uploaded file:", err)
+// 		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to get uploaded file"})
+// 		return
+// 	}
+
+// 	file, _ := fileHeader.Open()
+// 	defer file.Close()
+
+// 	f, err := excelize.OpenReader(file)
+// 	if err != nil {
+// 		fmt.Println("Invalid Excel file:", err)
+// 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Excel file"})
+// 		return
+// 	}
+
+// 	rows, err := f.GetRows("Sheet1")
+// 	if err != nil {
+// 		fmt.Println("Failed to read Excel rows:", err)
+// 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to read Excel rows"})
+// 		return
+// 	}
+
+// 	validDepartments, err := sc.DeptRepo.GetAllDepartments(c.Request.Context())
+// 	if err != nil {
+// 		fmt.Println("Failed to fetch departments:", err)
+// 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch departments"})
+// 		return
+// 	}
+// 	deptMap := make(map[string]bool)
+// 	for _, dept := range validDepartments {
+// 		deptMap[dept.Name] = true
+// 	}
+
+// 	successCount, failCount := 0, 0
+// 	for i, row := range rows {
+// 		if i == 0 {
+// 			continue
+// 		}
+// 		if len(row) < 4 {
+// 			fmt.Printf("Row %d incomplete — skipped: %+v\n", i+1, row)
+// 			failCount++
+// 			continue
+// 		}
+
+// 		student := model.Student{
+//         	RegNo:      cleanValue(row[1]),
+//         	Name:       cleanValue(row[2]),
+//         	Email:      cleanValue(row[3]),
+// 	        Department: cleanValue(row[4]),
+
+// }
+
+//         fmt.Printf("Debug email at row %d: '%s'\n", i+1, student.Email)
+
+// 		if err := validateStudent(student); err != nil {
+// 			fmt.Printf("Row %d validation failed: %v\n", i+1, err)
+// 			failCount++
+// 			continue
+// 		}
+
+// 		if !deptMap[student.Department] {
+// 			fmt.Printf("Row %d invalid department: %s\n", i+1, student.Department)
+// 			failCount++
+// 			continue
+// 		}
+
+// 		if err := sc.Repo.CreateStudent(c.Request.Context(), &student); err != nil {
+// 			fmt.Printf("Row %d DB insert error: %v\n", i+1, err)
+// 			failCount++
+// 			continue
+// 		}
+
+// 		successCount++
+// 	}
+
+// 	fmt.Printf("Import completed — Success: %d, Failed: %d\n", successCount, failCount)
+
+// 	c.JSON(http.StatusOK, gin.H{
+// 		"message":      "Excel import completed",
+// 		"successCount": successCount,
+// 		"failCount":    failCount,
+// 	})
+// }
+
 func (sc *StudentController) ImportStudentsFromExcelHandler(c *gin.Context) {
 	fmt.Println("==== ImportStudentsFromExcelHandler hit ====")
 
@@ -222,6 +331,7 @@ func (sc *StudentController) ImportStudentsFromExcelHandler(c *gin.Context) {
 		return
 	}
 
+	// Load valid departments
 	validDepartments, err := sc.DeptRepo.GetAllDepartments(c.Request.Context())
 	if err != nil {
 		fmt.Println("Failed to fetch departments:", err)
@@ -236,24 +346,23 @@ func (sc *StudentController) ImportStudentsFromExcelHandler(c *gin.Context) {
 	successCount, failCount := 0, 0
 	for i, row := range rows {
 		if i == 0 {
-			continue
+			continue // skip header
 		}
-		if len(row) < 4 {
+
+		if len(row) < 5 {
 			fmt.Printf("Row %d incomplete — skipped: %+v\n", i+1, row)
 			failCount++
 			continue
 		}
 
 		student := model.Student{
-        	RegNo:      cleanValue(row[1]),
-        	Name:       cleanValue(row[2]),
-        	Email:      cleanValue(row[3]),
-	        Department: cleanValue(row[4]),
+			RegNo:      cleanValue(row[1]),
+			Name:       cleanValue(row[2]),
+			Email:      cleanValue(row[3]),
+			Department: cleanValue(row[4]),
+		}
 
-}
-
-        fmt.Printf("Debug email at row %d: '%s'\n", i+1, student.Email)
-
+		// Validate student data
 		if err := validateStudent(student); err != nil {
 			fmt.Printf("Row %d validation failed: %v\n", i+1, err)
 			failCount++
@@ -266,23 +375,51 @@ func (sc *StudentController) ImportStudentsFromExcelHandler(c *gin.Context) {
 			continue
 		}
 
+		// Insert student
 		if err := sc.Repo.CreateStudent(c.Request.Context(), &student); err != nil {
-			fmt.Printf("Row %d DB insert error: %v\n", i+1, err)
+			fmt.Printf("Row %d DB insert error (student): %v\n", i+1, err)
 			failCount++
 			continue
+		}
+
+		// If company name exists, insert offer as well
+		if len(row) >= 9 && cleanValue(row[5]) != "" {
+			stipendFloat, _ := strconv.ParseFloat(cleanValue(row[7]), 64)
+			packageFloat, _ := strconv.ParseFloat(cleanValue(row[8]), 64)
+
+			// Parse offer type flags
+			ppo, ppoi, iFlag := parseOfferTypeFlags(cleanValue(row[6]))
+
+			offer := model.CompanyStudent{
+				RegNo:       student.RegNo,
+				CompanyName: cleanValue(row[5]),
+				Stipend:     stipendFloat,
+				Package:     packageFloat,
+				PPO:         ppo,
+				PPOI:        ppoi,
+				I:           iFlag,
+				Department:  student.Department,
+				StudentName: student.Name,
+				Email:       student.Email,
+			}
+
+			if err := sc.Repo.CreateCompanyStudent(c.Request.Context(), &offer); err != nil {
+				fmt.Printf("Row %d DB insert error (offer): %v\n", i+1, err)
+				// Don’t fail the student insertion if offer insert fails
+			}
 		}
 
 		successCount++
 	}
 
 	fmt.Printf("Import completed — Success: %d, Failed: %d\n", successCount, failCount)
-
 	c.JSON(http.StatusOK, gin.H{
 		"message":      "Excel import completed",
 		"successCount": successCount,
 		"failCount":    failCount,
 	})
 }
+
 
 func isValidEmail(email string) bool {
 	email = strings.TrimSpace(email)
