@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"fmt"
 	"placementportal/backend/pkg/model"
 	"placementportal/backend/student_service/repository"
 
@@ -12,6 +13,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/xuri/excelize/v2"
 )
 
 type StudentController struct {
@@ -189,13 +191,118 @@ func maxPackage(companies []model.CompanyStudent) float64 {
 	return max
 }
 
+func cleanValue(val string) string {
+	return strings.TrimSpace(strings.ReplaceAll(strings.ReplaceAll(val, "\n", ""), "\r", ""))
+}
+
+func (sc *StudentController) ImportStudentsFromExcelHandler(c *gin.Context) {
+	fmt.Println("==== ImportStudentsFromExcelHandler hit ====")
+
+	fileHeader, err := c.FormFile("file")
+	if err != nil {
+		fmt.Println("Failed to get uploaded file:", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to get uploaded file"})
+		return
+	}
+
+	file, _ := fileHeader.Open()
+	defer file.Close()
+
+	f, err := excelize.OpenReader(file)
+	if err != nil {
+		fmt.Println("Invalid Excel file:", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Excel file"})
+		return
+	}
+
+	rows, err := f.GetRows("Sheet1")
+	if err != nil {
+		fmt.Println("Failed to read Excel rows:", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to read Excel rows"})
+		return
+	}
+
+	validDepartments, err := sc.DeptRepo.GetAllDepartments(c.Request.Context())
+	if err != nil {
+		fmt.Println("Failed to fetch departments:", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch departments"})
+		return
+	}
+	deptMap := make(map[string]bool)
+	for _, dept := range validDepartments {
+		deptMap[dept.Name] = true
+	}
+
+	successCount, failCount := 0, 0
+	for i, row := range rows {
+		if i == 0 {
+			continue
+		}
+		if len(row) < 4 {
+			fmt.Printf("Row %d incomplete — skipped: %+v\n", i+1, row)
+			failCount++
+			continue
+		}
+
+		student := model.Student{
+        	RegNo:      cleanValue(row[1]),
+        	Name:       cleanValue(row[2]),
+        	Email:      cleanValue(row[3]),
+	        Department: cleanValue(row[4]),
+
+}
+
+        fmt.Printf("Debug email at row %d: '%s'\n", i+1, student.Email)
+
+		if err := validateStudent(student); err != nil {
+			fmt.Printf("Row %d validation failed: %v\n", i+1, err)
+			failCount++
+			continue
+		}
+
+		if !deptMap[student.Department] {
+			fmt.Printf("Row %d invalid department: %s\n", i+1, student.Department)
+			failCount++
+			continue
+		}
+
+		if err := sc.Repo.CreateStudent(c.Request.Context(), &student); err != nil {
+			fmt.Printf("Row %d DB insert error: %v\n", i+1, err)
+			failCount++
+			continue
+		}
+
+		successCount++
+	}
+
+	fmt.Printf("Import completed — Success: %d, Failed: %d\n", successCount, failCount)
+
+	c.JSON(http.StatusOK, gin.H{
+		"message":      "Excel import completed",
+		"successCount": successCount,
+		"failCount":    failCount,
+	})
+}
+
+func isValidEmail(email string) bool {
+	email = strings.TrimSpace(email)
+	re := regexp.MustCompile(`(?i)^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$`)
+	return re.MatchString(email)
+}
+
+
 func validateStudent(student model.Student) error {
+	student.RegNo = cleanValue(student.RegNo)
+	student.Name = cleanValue(student.Name)
+	student.Email = cleanValue(student.Email)
+	student.Department = cleanValue(student.Department)
+
 	if student.RegNo == "" {
 		return errors.New("registration number cannot be empty")
 	}
-	if len(student.RegNo) != 9 {
-		return errors.New("registration number must be exactly 9 characters")
-	}
+	// if len(student.RegNo) != 9 {
+	// 	return errors.New("registration number must be exactly 9 characters")
+	// }
 	if student.Name == "" {
 		return errors.New("student name cannot be empty")
 	}
@@ -214,7 +321,4 @@ func validateStudent(student model.Student) error {
 	return nil
 }
 
-func isValidEmail(email string) bool {
-	re := regexp.MustCompile(`^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$`)
-	return re.MatchString(email)
-}
+

@@ -60,6 +60,7 @@ const LoginPage = ({ onLoginSuccess }) => {
       "fpccse@example.com",
       "fpccce@example.com",
       "fpcaiml@example.com",
+      "fpciot@example.com",
       "fpcit@example.com"
     ];
     const requiredDomain = "@muj.ac.in";
