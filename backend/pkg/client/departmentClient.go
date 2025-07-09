@@ -1,11 +1,12 @@
 package client
 
 import (
-	"placementportal/backend/pkg/model"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
+	"placementportal/backend/pkg/model"
+	"placementportal/backend/portal_service/config"
 )
 
 // DepartmentClient struct holds the HTTP client and the base URL for the department service.

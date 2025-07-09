@@ -1,16 +1,15 @@
-// components/CreateUserPage.js
-import React, { useState } from "react";
 import {
   Box,
   Button,
   Dialog,
-  DialogTitle,
-  DialogContent,
   DialogActions,
-  TextField,
+  DialogContent,
+  DialogTitle,
   MenuItem,
+  TextField,
   Typography,
 } from "@mui/material";
+import { useState } from "react";
 
 const roles = [
   "admin", "faculty", "fpc", "placement_team", "dean", "assistant_dean", "vc"
@@ -24,7 +23,7 @@ const CreateUserPage = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
-    password: "",
+    password: "",    // ✅ use password, not password_hash
     role: "",
     department: ""
   });
@@ -35,27 +34,43 @@ const CreateUserPage = () => {
   };
 
   const handleSubmit = async () => {
+    const sessionId = localStorage.getItem("selectedBatch");
+    if (!sessionId) {
+      alert("Please select a batch session first!");
+      return;
+    }
+
+    const payload = {
+      ...formData,
+      session_id: parseInt(sessionId)
+    };
+
     try {
-      const res = await fetch("http://localhost:5002/users", {
+      const token = localStorage.getItem("token");
+      const res = await fetch("http://localhost:8080/admin/create-user", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify(payload),
       });
 
       if (res.ok) {
-        alert("User created successfully");
+        const data = await res.json();
+        alert(`✅ User created successfully. Password: ${data.generated_pass}`);
         setFormData({ email: "", password: "", role: "", department: "" });
         setDialogOpen(false);
       } else {
-        alert("Failed to create user");
+        const errMsg = await res.text();
+        alert("❌ Failed to create user: " + errMsg);
       }
     } catch (error) {
-      alert("Error creating user");
+      alert("❌ Error creating user");
       console.error(error);
     }
   };
 
-  // Show department dropdown only for these roles
   const needsDepartment = ["faculty", "fpc", "placement_team", "admin"].includes(formData.role);
 
   return (
@@ -122,3 +137,4 @@ const CreateUserPage = () => {
 };
 
 export default CreateUserPage;
+

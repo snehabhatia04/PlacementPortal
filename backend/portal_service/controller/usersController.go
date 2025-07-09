@@ -1,11 +1,11 @@
 package controller
 
 import (
-	"placementportal/backend/pkg/model"
-	"placementportal/backend/portal_service/repository"
-    "placementportal/backend/portal_service/config"
 	"math/rand"
 	"net/http"
+	"placementportal/backend/pkg/model"
+	"placementportal/backend/portal_service/config"
+	"placementportal/backend/portal_service/repository"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -34,6 +34,51 @@ func GenerateRandomPassword() string {
 }
 
 // CreateUserHandler - only Admin can create users and assign roles
+// func (uc *UserController) CreateUserHandler(c *gin.Context) {
+//     roleFromToken := c.GetString("role")
+//     if roleFromToken != "admin" {
+//         c.JSON(http.StatusForbidden, gin.H{"error": "Only admin can create users"})
+//         return
+//     }
+
+//     var user model.User
+//     if err := c.ShouldBindJSON(&user); err != nil {
+//         c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+//         return
+//     }
+
+//     var password string
+//     // if password provided in body, use it — else generate one
+//     if user.PasswordHash != "" {
+//         password = user.PasswordHash
+//     } else {
+//         password = GenerateRandomPassword()
+//     }
+
+//     hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+//     if err != nil {
+//         c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to hash password"})
+//         return
+//     }
+//     user.PasswordHash = string(hashedPassword)
+
+//     // Set default status
+//     user.Status = "reset_required"
+
+//     // Create user
+//     id, err := uc.UserRepo.CreateUser(user)
+//     if err != nil {
+//         c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create user"})
+//         return
+//     }
+
+//     c.JSON(http.StatusCreated, gin.H{
+//         "message":        "User created successfully",
+//         "user_id":        id,
+//         "generated_pass": password, // whatever was used (provided / generated)
+//     })
+// }
+
 func (uc *UserController) CreateUserHandler(c *gin.Context) {
     roleFromToken := c.GetString("role")
     if roleFromToken != "admin" {
@@ -48,9 +93,9 @@ func (uc *UserController) CreateUserHandler(c *gin.Context) {
     }
 
     var password string
-    // if password provided in body, use it — else generate one
-    if user.PasswordHash != "" {
-        password = user.PasswordHash
+    // 🔥 Use user.Password (not PasswordHash)
+    if user.Password != "" {
+        password = user.Password
     } else {
         password = GenerateRandomPassword()
     }
@@ -79,6 +124,7 @@ func (uc *UserController) CreateUserHandler(c *gin.Context) {
     })
 }
 
+
 // LoginUserHandler - all users login by email-password
 // 
 func (uc *UserController) LoginUserHandler(c *gin.Context) {
@@ -99,7 +145,7 @@ func (uc *UserController) LoginUserHandler(c *gin.Context) {
 
     user, err := uc.UserRepo.GetUserByEmail(input.Email)
     if err != nil {
-        println("❌ Error fetching user by email:", err.Error())
+        println("Error fetching user by email:", err.Error())
         c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
         return
     }

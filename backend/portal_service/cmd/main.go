@@ -119,7 +119,9 @@ func main() {err := godotenv.Load("../.env") // ← Load from student_service fo
 
 	// User Authentication Routes
 	r.POST("/login", userController.LoginUserHandler)
-	r.POST("/reset-password", middleware.AuthMiddleware(cfg.JwtSecretKey, ""), userController.ResetPasswordHandler)
+	//r.POST("/reset-password", middleware.AuthMiddleware(cfg.JwtSecretKey, ""), userController.ResetPasswordHandler)
+	r.POST("/reset-password", userController.ResetPasswordHandler) // move this OUT of any auth middleware group
+
 
 	// Admin-only Routes
 	adminRoutes := r.Group("/admin")

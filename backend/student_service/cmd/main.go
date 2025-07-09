@@ -75,6 +75,10 @@ func main() {
 		studentRoutes.DELETE("/:reg_no",
 			middleware.PermissionMiddleware("delete_student"),
 			studentController.DeleteStudentHandler)
+
+		studentRoutes.POST("/import",
+            middleware.PermissionMiddleware("create_student"),
+            studentController.ImportStudentsFromExcelHandler)
 	}
 
 	// Start server

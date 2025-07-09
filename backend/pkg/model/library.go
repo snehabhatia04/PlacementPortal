@@ -35,7 +35,9 @@ type User struct {
 	ID           int     `json:"id" db:"id"`
 	Name         string  `json:"name" db:"name"`
 	Email        string  `json:"email" db:"email"`
-	PasswordHash string  `json:"-" db:"password_hash"`
+	//PasswordHash string  `json:"-" db:"password_hash"`
+	Password     string  `json:"password,omitempty"` // for input
+	PasswordHash string  `json:"-" db:"password_hash"` // only for DB storage
 	Role         string  `json:"role" db:"role"`
 	Department   *string `json:"department,omitempty" db:"department"`
 	SessionID    int     `json:"session_id" db:"session_id"`
