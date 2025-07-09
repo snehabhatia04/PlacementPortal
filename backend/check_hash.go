@@ -8,10 +8,10 @@ import (
 
 func main() {
 	// Replace this with your hashed password copied from DB
-	hashedPassword := "$2a$10$5zew8JAI7CGPB3X75GZjB.i9vpDFDiGmuBGh.Ws57Z.3LKLrKb3l6"
+	hashedPassword := "$2a$10$lpQ2gcoHFqW/5hAZDJ3YS.V.fTXfIkgHTZuCEMfGrp6H/hQOIyxGa"
 
 	// Replace this with the plaintext password you want to check
-	plaintextPassword := "fpc123"
+	plaintextPassword := "admin123"
 
 	err := bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(plaintextPassword))
 	if err != nil {
