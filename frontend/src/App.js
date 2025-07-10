@@ -72,21 +72,21 @@ const AppRoutes = ({
           <Route path="/reset-password" element={<ResetPasswordPage />} />
 
           <Route
-            path="/"
-            element={
-              isAuthenticated ? (
-                userStatus === "reset_required" ? (
-                  <Navigate to="/reset-password" />
-                ) : selectedBatch ? (
-                  <Dashboard token={token} handleLogout={handleLogout} />
-                ) : (
-                  <Navigate to="/select-batch" />
-                )
-              ) : (
-                <Navigate to="/login" />
-              )
-            }
-          />
+  path="/"
+  element={
+    isAuthenticated ? (
+      userStatus === "reset_required" ? (
+        <Navigate to="/reset-password" />
+      ) : selectedBatch ? (
+        <Navigate to={`/dashboard/${selectedBatch}`} />
+      ) : (
+        <Navigate to="/select-batch" />
+      )
+    ) : (
+      <Navigate to="/login" />
+    )
+  }
+/>
 
           <Route
             path="/select-batch"
@@ -148,6 +148,21 @@ const AppRoutes = ({
               )
             }
           />
+          <Route
+  path="/dashboard/:sessionId"
+  element={
+    isAuthenticated ? (
+      <Dashboard
+        token={token}
+        handleLogout={handleLogout}
+        selectedBatch={selectedBatch}
+        setSelectedBatch={setSelectedBatch}
+      />
+    ) : (
+      <Navigate to="/login" />
+    )
+  }
+/>
         </Routes>
       </Box>
     </Box>

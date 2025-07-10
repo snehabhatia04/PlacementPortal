@@ -29,17 +29,37 @@ export const PlacementProvider = ({ children }) => {
     }));
   };
 
+  // const fetchAllStudents = async () => {
+  //   try {
+  //     const response = await axiosInstance.get("/students/");
+  //     const mapped = mapStudentCompaniesToOffers(response.data || []);
+  //     console.log("✅ All students fetched:", mapped);
+  //     setAllStudents(mapped);
+  //   } catch (error) {
+  //     console.error("❌ Failed to fetch all students:", error);
+  //     setAllStudents([]);
+  //   }
+  // };
   const fetchAllStudents = async () => {
-    try {
-      const response = await axiosInstance.get("/students/");
-      const mapped = mapStudentCompaniesToOffers(response.data || []);
-      console.log("✅ All students fetched:", mapped);
-      setAllStudents(mapped);
-    } catch (error) {
-      console.error("❌ Failed to fetch all students:", error);
-      setAllStudents([]);
-    }
-  };
+  const sessionID = localStorage.getItem("selectedBatch");
+  if (!sessionID) {
+    console.error("No session ID found in localStorage.");
+    return;
+  }
+
+  try {
+    const response = await axiosInstance.get("/students/", {
+      params: { session_id: sessionID },
+    });
+    const mapped = mapStudentCompaniesToOffers(response.data || []);
+    console.log("✅ All students fetched:", mapped);
+    setAllStudents(mapped);
+  } catch (error) {
+    console.error("❌ Failed to fetch all students:", error);
+    setAllStudents([]);
+  }
+};
+
 
   const fetchStudentsByDepartment = async (dept, selectedFilter = "default") => {
   if (!dept) return;

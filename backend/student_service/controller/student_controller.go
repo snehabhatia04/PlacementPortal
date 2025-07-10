@@ -34,29 +34,27 @@ func (sc *StudentController) GetAllStudentsHandler(c *gin.Context) {
 			deptStr = d
 		}
 	}
-	log.Println("Using Department:", deptStr)
-	students, err := sc.Repo.GetAllStudents(c.Request.Context(), deptStr)
+
+	sessionIDStr := c.Query("session_id")
+	if sessionIDStr == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Session ID is required"})
+		return
+	}
+
+	sessionID, err := strconv.Atoi(sessionIDStr)
 	if err != nil {
-		log.Println("Failed to fetch students:", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid session ID"})
+		return
+	}
+
+	students, err := sc.Repo.GetAllStudents(c.Request.Context(), deptStr, sessionID)
+	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch students"})
 		return
 	}
+
 	c.JSON(http.StatusOK, students)
 }
-
-// func (sc *StudentController) GetStudentByRegNoHandler(c *gin.Context) {
-// 	regNo := c.Param("reg_no")
-// 	if regNo == "" {
-// 		c.JSON(http.StatusBadRequest, gin.H{"error": "Registration number is required"})
-// 		return
-// 	}
-// 	student, err := sc.Repo.GetStudentByRegNo(c.Request.Context(), regNo)
-// 	if err != nil {
-// 		c.JSON(http.StatusNotFound, gin.H{"error": "Student not found"})
-// 		return
-// 	}
-// 	c.JSON(http.StatusOK, student)
-// }
 
 func (sc *StudentController) GetStudentByRegNoHandler(c *gin.Context) {
 	regNo := c.Param("reg_no")
@@ -93,6 +91,8 @@ func (sc *StudentController) CreateStudentHandler(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
 		return
 	}
+
+	// Validate department
 	departmentRepo, exists := c.Get("deptRepo")
 	if !exists {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Department repository not found"})
@@ -114,16 +114,26 @@ func (sc *StudentController) CreateStudentHandler(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid department"})
 		return
 	}
+
+	// Validate session_id
+	if student.SessionID == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Session ID is required"})
+		return
+	}
+
 	if err := validateStudent(student); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+
 	if err := sc.Repo.CreateStudent(c.Request.Context(), &student); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create student"})
 		return
 	}
+
 	c.JSON(http.StatusCreated, gin.H{"message": "Student created successfully"})
 }
+
 
 func (sc *StudentController) UpdateStudentHandler(c *gin.Context) {
 	var student model.Student
@@ -185,7 +195,7 @@ func (sc *StudentController) GetStudentsByDepartment(c *gin.Context) {
 	}
 
 	// Fetch students from repo
-	students, err := sc.Repo.GetStudentsByDepartment(c.Request.Context(), dept)
+	students, err := sc.Repo.GetStudentsByDepartment(c.Request.Context(), dept, sessionID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -223,23 +233,6 @@ func (sc *StudentController) GetStudentsByDepartment(c *gin.Context) {
 	c.JSON(http.StatusOK, students)
 }
 
-
-// func filterByPlacementStatus(students []model.Student, status string) []model.Student {
-// 	var result []model.Student
-// 	for _, s := range students {
-// 		if len(s.Companies) == 0 && status == "notplaced" {
-// 			result = append(result, s)
-// 			continue
-// 		}
-// 		for _, c := range s.Companies {
-// 			if status == "placed" && (c.PPO || c.PPOI) {
-// 				result = append(result, s)
-// 				break
-// 			}
-// 		}
-// 	}
-// 	return result
-// }
 
 func filterByPlacementStatus(students []model.Student, status string) []model.Student {
 	var result []model.Student
@@ -316,30 +309,36 @@ func isInternshipOffer(offerType string) bool {
 	return offerType == "PPO+I" || offerType == "I"
 }
 
-
 func (sc *StudentController) ImportStudentsFromExcelHandler(c *gin.Context) {
 	fmt.Println("==== ImportStudentsFromExcelHandler hit ====")
 
-	fileHeader, err := c.FormFile("file")
+	sessionIdStr := c.PostForm("session_id")
+	if sessionIdStr == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "session_id is required"})
+		return
+	}
+	sessionId, err := strconv.Atoi(sessionIdStr)
 	if err != nil {
-		fmt.Println("Failed to get uploaded file:", err)
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to get uploaded file"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid session_id"})
 		return
 	}
 
+	fileHeader, err := c.FormFile("file")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to get uploaded file"})
+		return
+	}
 	file, _ := fileHeader.Open()
 	defer file.Close()
 
 	f, err := excelize.OpenReader(file)
 	if err != nil {
-		fmt.Println("Invalid Excel file:", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Excel file"})
 		return
 	}
 
 	rows, err := f.GetRows("Sheet1")
 	if err != nil {
-		fmt.Println("Failed to read Excel rows:", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to read Excel rows"})
 		return
 	}
@@ -347,7 +346,6 @@ func (sc *StudentController) ImportStudentsFromExcelHandler(c *gin.Context) {
 	// Load valid departments
 	validDepartments, err := sc.DeptRepo.GetAllDepartments(c.Request.Context())
 	if err != nil {
-		fmt.Println("Failed to fetch departments:", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch departments"})
 		return
 	}
@@ -361,9 +359,7 @@ func (sc *StudentController) ImportStudentsFromExcelHandler(c *gin.Context) {
 		if i == 0 {
 			continue // skip header
 		}
-
 		if len(row) < 5 {
-			fmt.Printf("Row %d incomplete — skipped: %+v\n", i+1, row)
 			failCount++
 			continue
 		}
@@ -373,34 +369,27 @@ func (sc *StudentController) ImportStudentsFromExcelHandler(c *gin.Context) {
 			Name:       cleanValue(row[2]),
 			Email:      cleanValue(row[3]),
 			Department: cleanValue(row[4]),
+			SessionID:  sessionId, // attach here
 		}
 
-		// Validate student data
 		if err := validateStudent(student); err != nil {
-			fmt.Printf("Row %d validation failed: %v\n", i+1, err)
 			failCount++
 			continue
 		}
-
 		if !deptMap[student.Department] {
-			fmt.Printf("Row %d invalid department: %s\n", i+1, student.Department)
 			failCount++
 			continue
 		}
 
-		// Insert student
 		if err := sc.Repo.CreateStudent(c.Request.Context(), &student); err != nil {
-			fmt.Printf("Row %d DB insert error (student): %v\n", i+1, err)
 			failCount++
 			continue
 		}
 
-		// If company name exists, insert offer as well
 		if len(row) >= 9 && cleanValue(row[5]) != "" {
 			stipendFloat, _ := strconv.ParseFloat(cleanValue(row[7]), 64)
 			packageFloat, _ := strconv.ParseFloat(cleanValue(row[8]), 64)
 
-			// Parse offer type flags
 			ppo, ppoi, iFlag := parseOfferTypeFlags(cleanValue(row[6]))
 
 			offer := model.CompanyStudent{
@@ -414,18 +403,14 @@ func (sc *StudentController) ImportStudentsFromExcelHandler(c *gin.Context) {
 				Department:  student.Department,
 				StudentName: student.Name,
 				Email:       student.Email,
+				SessionID:   sessionId,
 			}
 
-			if err := sc.Repo.CreateCompanyStudent(c.Request.Context(), &offer); err != nil {
-				fmt.Printf("Row %d DB insert error (offer): %v\n", i+1, err)
-				// Don’t fail the student insertion if offer insert fails
-			}
+			_ = sc.Repo.CreateCompanyStudent(c.Request.Context(), &offer)
 		}
-
 		successCount++
 	}
 
-	fmt.Printf("Import completed — Success: %d, Failed: %d\n", successCount, failCount)
 	c.JSON(http.StatusOK, gin.H{
 		"message":      "Excel import completed",
 		"successCount": successCount,

@@ -1,7 +1,5 @@
 import LogoutIcon from "@mui/icons-material/Logout";
 import MenuIcon from "@mui/icons-material/Menu";
-import NotificationsIcon from "@mui/icons-material/Notifications";
-import SearchIcon from "@mui/icons-material/Search";
 import {
   AppBar,
   Box,
@@ -10,16 +8,20 @@ import {
   CardContent,
   Grid,
   IconButton,
-  InputBase,
-  Menu,
-  MenuItem,
-  Paper,
   Toolbar,
-  Typography
+  Typography,
 } from "@mui/material";
 import { styled } from "@mui/system";
 import { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
 import { usePlacement } from "../MainTable/MainPlacementTable";
+
+const idToBatchMap = {
+  1: "2021-25",
+  2: "2022-26",
+  3: "2023-27",
+  4: "2024-28",
+};
 
 // Styles...
 const Content = styled(Box)(({ theme }) => ({
@@ -41,17 +43,6 @@ const LogoutButton = styled(Button)({
   },
 });
 
-const SearchBar = styled(Paper)(({ theme }) => ({
-  display: "flex",
-  alignItems: "center",
-  padding: "4px 10px",
-  borderRadius: "20px",
-  width: "100%",
-  maxWidth: 300,
-  marginLeft: "auto",
-  backgroundColor: "#fff2e6",
-}));
-
 const ToggleButton = styled(IconButton)(({ theme }) => ({
   color: "white",
   marginRight: theme.spacing(2),
@@ -64,16 +55,26 @@ const SummaryCard = styled(Card)({
   minWidth: 160,
 });
 
-const Dashboard = ({ user = "User", handleLogout, batch = "2021-2025" }) => {
-  const [anchorEl, setAnchorEl] = useState(null);
+const Dashboard = ({ handleLogout, selectedBatch, setSelectedBatch }) => {
+  const { sessionId } = useParams();
+  const [userName, setUserName] = useState("User");
   const { allStudents, fetchAllStudents } = usePlacement();
 
   useEffect(() => {
     fetchAllStudents();
-  }, []);
 
-  const handleNotificationClick = (event) => setAnchorEl(event.currentTarget);
-  const handleNotificationClose = () => setAnchorEl(null);
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      const parsed = JSON.parse(storedUser);
+      setUserName(parsed.name || parsed.email || "User");
+    }
+  }, [fetchAllStudents]);
+
+  useEffect(() => {
+    if (sessionId) {
+      setSelectedBatch(sessionId);
+    }
+  }, [sessionId, setSelectedBatch]);
 
   const totalStudents = allStudents.length;
   const onCampus = allStudents.filter(s => s.status === "OnCampus").length;
@@ -103,18 +104,10 @@ const Dashboard = ({ user = "User", handleLogout, batch = "2021-2025" }) => {
           <Typography variant="h6" sx={{ flexGrow: 1, fontWeight: "bold", fontFamily: "'Segoe UI', sans-serif" }}>
             Dashboard
           </Typography>
-          <SearchBar>
-            <SearchIcon />
-            <InputBase placeholder="Search…" sx={{ ml: 1, flex: 1 }} />
-          </SearchBar>
-          <IconButton color="inherit" onClick={handleNotificationClick}>
-            <NotificationsIcon />
-          </IconButton>
-          <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleNotificationClose}>
-            <MenuItem onClick={handleNotificationClose}>New Placement Drive</MenuItem>
-            <MenuItem onClick={handleNotificationClose}>Internship Fair</MenuItem>
-          </Menu>
-          <Typography variant="body1" sx={{ mx: 2, fontWeight: 500 }}>{`229301245 :: ${user.toUpperCase()}`}</Typography>
+
+          <Typography variant="body1" sx={{ mx: 2, fontWeight: 500 }}>
+            {userName}
+          </Typography>
           <LogoutButton startIcon={<LogoutIcon />} onClick={handleLogout}>
             Logout
           </LogoutButton>
@@ -123,7 +116,7 @@ const Dashboard = ({ user = "User", handleLogout, batch = "2021-2025" }) => {
 
       <Content>
         <Typography variant="h5" fontWeight="bold" color="#E87722" gutterBottom>
-          Batch: {batch}
+          Batch: {idToBatchMap[sessionId || selectedBatch] || "Not selected"}
         </Typography>
 
         <Grid container spacing={3} mt={1}>

@@ -20,13 +20,13 @@ func NewStudentRepository(db *sqlx.DB) *StudentRepository {
 }
 
 // Get all students with mapped company placements
-func (r *StudentRepository) GetAllStudents(ctx context.Context, department string) ([]model.Student, error) {
+func (r *StudentRepository) GetAllStudents(ctx context.Context, department string, sessionId int) ([]model.Student, error) {
 	var students []model.Student
-	studentQuery := `SELECT reg_no, name, email, department FROM student`
-	var args []interface{}
+	studentQuery := `SELECT reg_no, name, email, department FROM student WHERE session_id = $1`
+	args := []interface{}{sessionId}
 
 	if strings.ToLower(department) != "admin" && strings.ToLower(department) != "all" {
-		studentQuery += " WHERE LOWER(department) = LOWER($1)"
+		studentQuery += " AND LOWER(department) = LOWER($2)"
 		args = append(args, department)
 	}
 
@@ -37,7 +37,6 @@ func (r *StudentRepository) GetAllStudents(ctx context.Context, department strin
 		return nil, fmt.Errorf("error fetching students: %w", err)
 	}
 
-	// Attach mapped companies for each student
 	for i, s := range students {
 		mappings, err := r.getCompanyMappingsForStudent(ctx, s.RegNo)
 		if err != nil {
@@ -49,28 +48,10 @@ func (r *StudentRepository) GetAllStudents(ctx context.Context, department strin
 	return students, nil
 }
 
-// Fetch a student by RegNo, with mapped companies
-// func (r *StudentRepository) GetStudentByRegNo(ctx context.Context, regNo string) (*model.Student, error) {
-// 	var student model.Student
-
-// 	query := "SELECT reg_no, name, email, department FROM student WHERE reg_no = $1"
-// 	err := r.DB.GetContext(ctx, &student, query, regNo)
-// 	if err != nil {
-// 		return nil, fmt.Errorf("error fetching student: %w", err)
-// 	}
-
-// 	student.Companies, err = r.getCompanyMappingsForStudent(ctx, student.RegNo)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-
-// 	return &student, nil
-// }
-
 func (r *StudentRepository) GetPlacementsByRegNo(ctx context.Context, regNo string, sessionId int) ([]model.StudentPlacement, error) {
 	query := `SELECT id, reg_no, placement_status, company_name, offer_type, stipend, package, higher_study_college, firm_name
-			  FROM student_placements
-			  WHERE reg_no = $1 AND session_id = $2`
+			FROM student_placements
+			WHERE reg_no = $1 AND session_id = $2`
 	rows, err := r.DB.QueryContext(ctx, query, regNo, sessionId)
 	if err != nil {
 		return nil, err
@@ -133,10 +114,10 @@ func (r *StudentRepository) getCompanyMappingsForStudent(ctx context.Context, re
 // Create student record, plus optional company mappings
 func (r *StudentRepository) CreateStudent(ctx context.Context, student *model.Student) error {
 	query := `
-		INSERT INTO student (reg_no, name, email, department)
-		VALUES ($1, $2, $3, $4)
+		INSERT INTO student (reg_no, name, email, department, session_id)
+		VALUES ($1, $2, $3, $4, $5)
 	`
-	_, err := r.DB.ExecContext(ctx, query, student.RegNo, student.Name, student.Email, student.Department)
+	_, err := r.DB.ExecContext(ctx, query, student.RegNo, student.Name, student.Email, student.Department, student.SessionID)
 	if err != nil {
 		return fmt.Errorf("error inserting student: %w", err)
 	}
@@ -223,15 +204,17 @@ func (r *StudentRepository) DeleteStudent(ctx context.Context, regNo string) err
 	return nil
 }
 
-// Fetch all students within a department with their company mappings
-func (r *StudentRepository) GetStudentsByDepartment(ctx context.Context, dept string) ([]model.Student, error) {
+// Fetch all students within a department for a specific session with their company mappings
+func (r *StudentRepository) GetStudentsByDepartment(ctx context.Context, dept string, sessionId int) ([]model.Student, error) {
 	var students []model.Student
 	studentQuery := `
 		SELECT reg_no, name, email, department
 		FROM student
-		WHERE department = $1
+		WHERE department = $1 AND session_id = $2
 	`
-	if err := r.DB.SelectContext(ctx, &students, studentQuery, dept); err != nil {
+	args := []interface{}{dept, sessionId}
+
+	if err := r.DB.SelectContext(ctx, &students, studentQuery, args...); err != nil {
 		return nil, fmt.Errorf("error fetching students: %w", err)
 	}
 

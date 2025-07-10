@@ -82,6 +82,7 @@ type CompanyStudent struct {
 	PPO         bool    `json:"ppo" db:"ppo"`
 	I           bool    `json:"i" db:"i"`
 	Department  string  `json:"department" db:"department"`
+	SessionID   int     `json:"session_id" db:"session_id"`
 }
 
 // StudentPlacement final outcome record

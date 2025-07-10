@@ -88,10 +88,19 @@ const PlacementTable = ({ studentData = [], companyView = null }) => {
   const formData = new FormData();
   formData.append("file", file);
 
+  const sessionID = localStorage.getItem("selectedBatch");
+  if (!sessionID) {
+    alert("Please select a batch before importing.");
+    return;
+  }
+
+  formData.append("session_id", sessionID);  // <-- Add this line
+
   try {
     const response = await axios.post("http://localhost:5001/students/import", formData, {
-      headers: { "Content-Type": "multipart/form-data",
-      "Authorization": `Bearer ${localStorage.getItem("token")}`
+      headers: {
+        "Content-Type": "multipart/form-data",
+        "Authorization": `Bearer ${localStorage.getItem("token")}`
       }
     });
 
