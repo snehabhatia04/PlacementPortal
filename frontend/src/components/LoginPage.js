@@ -8,6 +8,7 @@ import {
 import { styled } from "@mui/system";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import jwtDecode from "jwt-decode";
 
 // Styled Components
 const LoginContainer = styled(Container)({
@@ -119,21 +120,44 @@ const LoginPage = ({ onLoginSuccess }) => {
       //   }
       // })
 
-      .then((data) => {
+  //     .then((data) => {
+  // if (!data.token) {
+  //   setError(data.message || "Invalid response from server.");
+  //   return;
+  // }
+
+  // const user = {
+  //   email: cleanedEmail,
+  //   role: data.role || "admin",
+  // };
+
+  // localStorage.setItem("token", data.token);
+  // localStorage.setItem("user", JSON.stringify(user));
+  // localStorage.setItem("status", data.status);  // 👈 store status
+
+.then((data) => {
   if (!data.token) {
     setError(data.message || "Invalid response from server.");
     return;
   }
 
+  // ✅ Decode the token
+  const decoded = jwtDecode(data.token);
+
+  // ✅ Construct user object from token
   const user = {
-    email: cleanedEmail,
-    role: data.role || "admin",
+    id: decoded.id,
+    email: decoded.email,
+    role: decoded.role,
+    department: decoded.department || "",
+    session_id: decoded.session_id,
   };
 
+  // ✅ Save to localStorage
   localStorage.setItem("token", data.token);
   localStorage.setItem("user", JSON.stringify(user));
-  localStorage.setItem("status", data.status);  // 👈 store status
-
+  localStorage.setItem("status", data.status);
+  
   if (onLoginSuccess) {
     onLoginSuccess({ token: data.token, user, status: data.status });  // pass status
   }

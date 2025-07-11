@@ -330,6 +330,84 @@
 
 // export default BranchDetails;
 
+// import {
+//   Box,
+//   Button,
+//   FormControl,
+//   InputLabel,
+//   MenuItem,
+//   Select,
+//   Typography,
+// } from "@mui/material";
+// import React, { useEffect } from "react";
+// import { Link, useParams } from "react-router-dom";
+// import { usePlacement } from "../MainTable/MainPlacementTable";
+// import PlacementTable from "./PlacementTable";
+
+// const BranchDetails = () => {
+//   const { branch } = useParams();
+//   const {
+//     students,
+//     fetchStudentsByDepartment,
+//     setDepartment,
+//     filter,
+//     setFilter,
+//   } = usePlacement();
+
+//   // Fetch students when branch or filter changes
+//   useEffect(() => {
+//     if (branch) {
+//       const upperBranch = branch.toUpperCase();
+//       setDepartment(upperBranch);
+//       fetchStudentsByDepartment(upperBranch, filter);
+//     }
+//   }, [branch, filter]);
+
+//   return (
+//     <Box sx={{ flexGrow: 1, padding: 3 }}>
+//       <Typography variant="h5" sx={{ fontWeight: "bold", mb: 2 }}>
+//         {branch.toUpperCase()} - Student Details
+//       </Typography>
+
+//       <Box
+//         sx={{
+//           display: "flex",
+//           justifyContent: "space-between",
+//           alignItems: "center",
+//           mb: 2,
+//         }}
+//       >
+//         <Button
+//           variant="contained"
+//           component={Link}
+//           to={`/summary/${branch.toLowerCase()}`}
+//           sx={{ backgroundColor: "#ec7000", color: "#fff" }}
+//         >
+//           View {branch.toUpperCase()} Summary
+//         </Button>
+
+//         <FormControl size="small" sx={{ minWidth: 200 }}>
+//           <InputLabel>Filter</InputLabel>
+//           <Select
+//             value={filter}
+//             label="Filter"
+//             onChange={(e) => setFilter(e.target.value)}
+//           >
+//             <MenuItem value="default">Default</MenuItem>
+//             <MenuItem value="stipend">Stipend High to Low</MenuItem>
+//             <MenuItem value="placed">Placed Students</MenuItem>
+//             <MenuItem value="notPlaced">Not placed Students</MenuItem>
+//           </Select>
+//         </FormControl>
+//       </Box>
+
+//       {/* ✅ Show placement table even if empty */}
+//       <PlacementTable studentData={students || []} />
+//     </Box>
+//   );
+// };
+
+// export default BranchDetails;
 import {
   Box,
   Button,
@@ -343,6 +421,7 @@ import React, { useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
 import { usePlacement } from "../MainTable/MainPlacementTable";
 import PlacementTable from "./PlacementTable";
+import { hasPermission } from "../utils/permissions"; // 👈 Import permission checker
 
 const BranchDetails = () => {
   const { branch } = useParams();
@@ -354,55 +433,68 @@ const BranchDetails = () => {
     setFilter,
   } = usePlacement();
 
-  // Fetch students when branch or filter changes
+  // Uppercase branch string to match DB
+  const upperBranch = branch?.toUpperCase();
+
   useEffect(() => {
-    if (branch) {
-      const upperBranch = branch.toUpperCase();
+    if (upperBranch) {
       setDepartment(upperBranch);
       fetchStudentsByDepartment(upperBranch, filter);
     }
-  }, [branch, filter]);
+  }, [upperBranch, filter]);
+
+  // 🔐 Permission check
+  const canView = hasPermission("view_all_students") || hasPermission("view_own_department_students", upperBranch);
 
   return (
     <Box sx={{ flexGrow: 1, padding: 3 }}>
       <Typography variant="h5" sx={{ fontWeight: "bold", mb: 2 }}>
-        {branch.toUpperCase()} - Student Details
+        {upperBranch} - Student Details
       </Typography>
 
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          mb: 2,
-        }}
-      >
-        <Button
-          variant="contained"
-          component={Link}
-          to={`/summary/${branch.toLowerCase()}`}
-          sx={{ backgroundColor: "#ec7000", color: "#fff" }}
-        >
-          View {branch.toUpperCase()} Summary
-        </Button>
-
-        <FormControl size="small" sx={{ minWidth: 200 }}>
-          <InputLabel>Filter</InputLabel>
-          <Select
-            value={filter}
-            label="Filter"
-            onChange={(e) => setFilter(e.target.value)}
+      {/* 🔒 If no permission to view, block access */}
+      {!canView ? (
+        <Typography color="error" variant="h6">
+          Access Denied: You do not have permission to view this branch's students.
+        </Typography>
+      ) : (
+        <>
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              mb: 2,
+            }}
           >
-            <MenuItem value="default">Default</MenuItem>
-            <MenuItem value="stipend">Stipend High to Low</MenuItem>
-            <MenuItem value="placed">Placed Students</MenuItem>
-            <MenuItem value="notPlaced">Not placed Students</MenuItem>
-          </Select>
-        </FormControl>
-      </Box>
+            <Button
+              variant="contained"
+              component={Link}
+              to={`/summary/${branch.toLowerCase()}`}
+              sx={{ backgroundColor: "#ec7000", color: "#fff" }}
+            >
+              View {upperBranch} Summary
+            </Button>
 
-      {/* ✅ Show placement table even if empty */}
-      <PlacementTable studentData={students || []} />
+            <FormControl size="small" sx={{ minWidth: 200 }}>
+              <InputLabel>Filter</InputLabel>
+              <Select
+                value={filter}
+                label="Filter"
+                onChange={(e) => setFilter(e.target.value)}
+              >
+                <MenuItem value="default">Default</MenuItem>
+                <MenuItem value="stipend">Stipend High to Low</MenuItem>
+                <MenuItem value="placed">Placed Students</MenuItem>
+                <MenuItem value="notPlaced">Not placed Students</MenuItem>
+              </Select>
+            </FormControl>
+          </Box>
+
+          {/* ✅ Render table if permission granted */}
+          <PlacementTable studentData={students || []} />
+        </>
+      )}
     </Box>
   );
 };

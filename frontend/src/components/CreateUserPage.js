@@ -9,7 +9,13 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { useState } from "react";
+import { useState } from "react";import { Navigate } from "react-router-dom";
+import { hasPermission } from "../utils/permissions";
+
+if (!hasPermission("create_user")) {
+  return <Navigate to="/" replace />;
+}
+
 
 const roles = [
   "admin", "faculty", "fpc", "placement_team", "dean", "assistant_dean", "vc"
