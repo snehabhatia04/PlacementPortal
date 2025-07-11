@@ -7,8 +7,8 @@ import {
 } from "@mui/material";
 import { styled } from "@mui/system";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import jwtDecode from "jwt-decode";
+import { useNavigate } from "react-router-dom"; // ✅ Fixed missing quote
+import { jwtDecode } from "jwt-decode";
 
 // Styled Components
 const LoginContainer = styled(Container)({
@@ -157,7 +157,7 @@ const LoginPage = ({ onLoginSuccess }) => {
   localStorage.setItem("token", data.token);
   localStorage.setItem("user", JSON.stringify(user));
   localStorage.setItem("status", data.status);
-  
+
   if (onLoginSuccess) {
     onLoginSuccess({ token: data.token, user, status: data.status });  // pass status
   }

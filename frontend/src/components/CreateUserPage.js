@@ -12,11 +12,6 @@ import {
 import { useState } from "react";import { Navigate } from "react-router-dom";
 import { hasPermission } from "../utils/permissions";
 
-if (!hasPermission("create_user")) {
-  return <Navigate to="/" replace />;
-}
-
-
 const roles = [
   "admin", "faculty", "fpc", "placement_team", "dean", "assistant_dean", "vc"
 ];
@@ -26,6 +21,11 @@ const departments = [
 ];
 
 const CreateUserPage = () => {
+  
+if (!hasPermission("create_user")) {
+  return <Navigate to="/" replace />;
+}
+
   const [dialogOpen, setDialogOpen] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
