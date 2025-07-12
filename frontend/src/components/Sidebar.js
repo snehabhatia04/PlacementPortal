@@ -276,7 +276,9 @@ import {
 } from "@mui/material";
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { hasPermission, getCurrentUser } from "../utils/permissions"; // ✅
+import { hasPermission, getCurrentUser } from "../utils/permissions";
+
+
 
 const Sidebar = () => {
   const [openStudent, setOpenStudent] = useState(false);

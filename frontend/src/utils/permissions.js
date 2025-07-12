@@ -1,26 +1,70 @@
-export const getCurrentUser = () => {
+// import { RolePermissions } from "../constants/permissions";
+// import { getCurrentUser } from "./user";
+
+// export function hasPermission(permission, targetDepartment = null) {
+//   const user = getCurrentUser();
+//   if (!user || !user.role) return false;
+
+//   const userPermissions = RolePermissions[user.role] || [];
+
+//   // Exact permission match
+//   if (userPermissions.includes(permission)) return true;
+
+//   // Department-scoped logic
+//   if (
+//     permission === "view_own_department_students" &&
+//     targetDepartment &&
+//     user.department === targetDepartment
+//   ) {
+//     return userPermissions.includes("view_own_department_students");
+//   }
+
+//   if (
+//     permission === "view_companywise_students_own_dept" &&
+//     targetDepartment &&
+//     user.department === targetDepartment
+//   ) {
+//     return userPermissions.includes("view_companywise_students_own_dept");
+//   }
+
+//   return false;
+// }
+import { RolePermissions } from "../constants/permissions";
+
+// ✅ Add this function export
+export function getCurrentUser() {
   try {
-    const userRaw = localStorage.getItem("user");
-    return userRaw ? JSON.parse(userRaw) : null;
-  } catch (err) {
-    console.error("Failed to parse user from localStorage:", err);
+    return JSON.parse(localStorage.getItem("user"));
+  } catch (e) {
     return null;
   }
-};
+}
 
-export const hasPermission = (permission) => {
+export function hasPermission(permission, targetDepartment = null) {
   const user = getCurrentUser();
-  if (!user) return false;
+  if (!user || !user.role) return false;
 
-  const rolePermissions = {
-    admin: ["create_user", "view_all", "add_company"],
-    faculty: ["view_department"],
-    fpc: ["view_department", "add_student"],
-    placement_team: ["view_department"],
-    dean: ["view_all"],
-    assistant_dean: ["view_all"],
-    vc: ["view_all"],
-  };
+  const userPermissions = RolePermissions[user.role] || [];
 
-  return (rolePermissions[user.role] || []).includes(permission);
-};
+  // Exact match
+  if (userPermissions.includes(permission)) return true;
+
+  // Department-scoped fallback logic
+  if (
+    permission === "view_own_department_students" &&
+    targetDepartment &&
+    user.department === targetDepartment
+  ) {
+    return userPermissions.includes("view_own_department_students");
+  }
+
+  if (
+    permission === "view_companywise_students_own_dept" &&
+    targetDepartment &&
+    user.department === targetDepartment
+  ) {
+    return userPermissions.includes("view_companywise_students_own_dept");
+  }
+
+  return false;
+}

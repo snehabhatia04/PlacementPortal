@@ -398,6 +398,7 @@ import { usePlacement } from "../MainTable/MainPlacementTable";
 import PlacementTable from "./PlacementTable";
 import { hasPermission, getCurrentUser } from "../utils/permissions";
 
+
 const CompanyPage = () => {
   const { companyName } = useParams();
   const [openDialog, setOpenDialog] = useState(false);

@@ -157,7 +157,8 @@ import {
 } from "@mui/material";
 import React, { useState, useEffect } from "react";
 import { usePlacement } from "../MainTable/MainPlacementTable";
-import { hasPermission, getCurrentUser } from "../utils/permissions"; // ✅ Import
+import { hasPermission, getCurrentUser } from "../utils/permissions";
+
 
 const OffCampusPage = () => {
   const { allStudents, addStudent, fetchAllStudents } = usePlacement();

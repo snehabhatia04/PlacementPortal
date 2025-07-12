@@ -1212,7 +1212,8 @@ import InfoIcon from '@mui/icons-material/Info';
 import { useParams } from "react-router-dom";
 import * as XLSX from "xlsx";
 import { usePlacement } from "../MainTable/MainPlacementTable";
-import { hasPermission } from "../utils/permissions";
+import { hasPermission, getCurrentUser } from "../utils/permissions";
+
 
 const statusOptions = ["Placed", "Not Placed", "Higher Study", "Entrepreneur/Family Business"];
 const offerOptions = ["PPO", "PPO + I", "Intern"];
