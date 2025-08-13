@@ -1,0 +1,197 @@
+import (
+	"fmt"
+	"placementportal/backend/pkg/model"
+	"placementportal/backend/student_service/repository"
+	"strconv"
+
+	"errors"
+	"log"
+	"net/http"
+	"regexp"
+	"sort"
+	"strings"
+
+	"github.com/gin-gonic/gin"
+	"github.com/xuri/excelize/v2"
+)
+=======
+package controller
+
+import (
+	"log"
+	"net/http"
+	"strings"
+
+	"placementportal/backend/pkg/model"
+	"placementportal/backend/student_service/repository"
+
+	"github.com/gin-gonic/gin"
+)
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+func (sc *StudentController) CreateStudentHandler(c *gin.Context) {
+	var student model.Student
+	if err := c.ShouldBindJSON(&student); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+		return
+	}
+	departmentRepo, exists := c.Get("deptRepo")
+	if !exists {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Department repository not found"})
+		return
+	}
+	validDepartments, err := departmentRepo.(*repository.DepartmentRepository).GetAllDepartments(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch departments"})
+		return
+	}
+	validDepartment := false
+	for _, dept := range validDepartments {
+		if dept.Name == student.Department {
+			validDepartment = true
+			break
+		}
+	}
+	if !validDepartment {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid department"})
+		return
+	}
+	if err := validateStudent(student); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if err := sc.Repo.CreateStudent(c.Request.Context(), &student); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create student"})
+		return
+	}
+	c.JSON(http.StatusCreated, gin.H{"message": "Student created successfully"})
+}
+=======
+func (sc *StudentController) CreateStudentHandler(c *gin.Context) {
+	var student model.Student
+	if err := c.ShouldBindJSON(&student); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+		return
+	}
+	departmentRepo, exists := c.Get("deptRepo")
+	if !exists {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Department repository not found"})
+		return
+	}
+	validDepartments, err := departmentRepo.(*repository.DepartmentRepository).GetAllDepartments(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch departments"})
+		return
+	}
+	validDepartment := false
+	for _, dept := range validDepartments {
+		if dept.Name == student.Department {
+			validDepartment = true
+			break
+		}
+	}
+	if !validDepartment {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid department"})
+		return
+	}
+	if err := validateStudent(student); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if err := sc.Repo.CreateStudent(c.Request.Context(), &student); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create student"})
+		return
+	}
+	c.JSON(http.StatusCreated, gin.H{"message": "Student created successfully"})
+}
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+func (sc *StudentController) UpdateStudentHandler(c *gin.Context) {
+	var student model.Student
+	if err := c.ShouldBindJSON(&student); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+		return
+	}
+	if student.Email == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Email cannot be empty"})
+		return
+	}
+	if err := validateStudent(student); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if err := sc.Repo.UpdateStudent(c.Request.Context(), &student); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update student"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Student updated successfully"})
+}
+=======
+func (sc *StudentController) UpdateStudentHandler(c *gin.Context) {
+	var student model.Student
+	if err := c.ShouldBindJSON(&student); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+		return
+	}
+	if student.Email == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Email cannot be empty"})
+		return
+	}
+	if err := validateStudent(student); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if err := sc.Repo.UpdateStudent(c.Request.Context(), &student); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update student"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Student updated successfully"})
+}
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+func validateStudent(student model.Student) error {
+	if strings.TrimSpace(student.RegNo) == "" {
+		return &gin.Error{Err:  gin.Error{Err:  nil, Type: gin.ErrorTypeBind, Meta: "Registration number is required"}}
+	}
+	if strings.TrimSpace(student.Name) == "" {
+		return &gin.Error{Err:  gin.Error{Err:  nil, Type: gin.ErrorTypeBind, Meta: "Name is required"}}
+	}
+	if strings.TrimSpace(student.Email) == "" {
+		return &gin.Error{Err:  gin.Error{Err:  nil, Type: gin.ErrorTypeBind, Meta: "Email is required"}}
+	}
+	if strings.TrimSpace(student.Department) == "" {
+		return &gin.Error{Err:  gin.Error{Err:  nil, Type: gin.ErrorTypeBind, Meta: "Department is required"}}
+	}
+	if strings.TrimSpace(student.MobileNo) == "" {
+		return &gin.Error{Err:  gin.Error{Err:  nil, Type: gin.ErrorTypeBind, Meta: "Mobile number is required"}}
+	}
+	if student.SessionID == 0 {
+		return &gin.Error{Err:  gin.Error{Err:  nil, Type: gin.ErrorTypeBind, Meta: "Session ID is required"}}
+	}
+	return nil
+}
+=======
+func validateStudent(student model.Student) error {
+	if strings.TrimSpace(student.RegNo) == "" {
+		return &gin.Error{Err:  nil, Type: gin.ErrorTypeBind, Meta: "Registration number is required"}
+	}
+	if strings.TrimSpace(student.Name) == "" {
+		return &gin.Error{Err:  nil, Type: gin.ErrorTypeBind, Meta: "Name is required"}
+	}
+	if strings.TrimSpace(student.Email) == "" {
+		return &gin.Error{Err:  nil, Type: gin.ErrorTypeBind, Meta: "Email is required"}
+	}
+	if strings.TrimSpace(student.Department) == "" {
+		return &gin.Error{Err:  nil, Type: gin.ErrorTypeBind, Meta: "Department is required"}
+	}
+	if strings.TrimSpace(student.MobileNo) == "" {
+		return &gin.Error{Err:  nil, Type: gin.ErrorTypeBind, Meta: "Mobile number is required"}
+	}
+	if student.SessionID == 0 {
+		return &gin.Error{Err:  nil, Type: gin.ErrorTypeBind, Meta: "Session ID is required"}
+	}
+	return nil
+}

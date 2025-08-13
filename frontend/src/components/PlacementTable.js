@@ -1201,29 +1201,2052 @@
 // };
 
 // export default PlacementTable;
-// PlacementTable.js
+// // PlacementTable.js
+// import React, { useEffect, useState } from "react";
+// import {
+//   Box, Button, Dialog, DialogActions, DialogContent, DialogTitle,
+//   Paper, Table, TableBody, TableCell, TableContainer, TableHead,
+//   TableRow, TextField, MenuItem, InputBase, IconButton, Tooltip
+// } from "@mui/material";
+// import InfoIcon from '@mui/icons-material/Info';
+// import { useParams } from "react-router-dom";
+// import * as XLSX from "xlsx";
+// import { usePlacement } from "../MainTable/MainPlacementTable";
+// import { hasPermission } from "../utils/permissions";
+// import { getCurrentUser } from "../utils/user";
+
+
+
+// const statusOptions = ["Placed", "Not Placed", "Higher Study", "Entrepreneur/Family Business"];
+// const offerOptions = ["PPO", "PPO + I", "Intern"];
+
+// const PlacementTable = ({ studentData = [], companyView = null }) => {
+//   const { addStudent, fetchAllStudents } = usePlacement();
+//   const [students, setStudents] = useState([]);
+//   const [filteredStudents, setFilteredStudents] = useState([]);
+//   const [searchQuery, setSearchQuery] = useState("");
+//   const { branch } = useParams();
+//   const [dialogOpen, setDialogOpen] = useState(false);
+//   const [infoOpen, setInfoOpen] = useState(false);
+//   const [infoStudent, setInfoStudent] = useState(null);
+
+//   const [newStudent, setNewStudent] = useState({
+//     reg_no: "",
+//     name: "",
+//     department: branch?.toUpperCase() || "",
+//     status: "",
+//     higher_study_college: "",
+//     higher_study_degree: "",
+//     higher_study_country: "",
+//     firm_name: "",
+//     firm_reg_no: "",
+//     gst_no: "",
+//     role_in_firm: "",
+//     offers: [{ company: "", offer_type: "", stipend: "", package: "" }]
+//   });
+
+//   useEffect(() => {
+//     const permitted = studentData.filter(s => hasPermission("view_own_department_students", s.department));
+//     setStudents(permitted);
+//     setFilteredStudents(permitted);
+//   }, [studentData]);
+
+//   const handleDialogChange = (e) => {
+//     const { name, value } = e.target;
+//     setNewStudent((prev) => ({ ...prev, [name]: value }));
+//   };
+
+//   const handleOfferChange = (index, field, value) => {
+//     const newOffers = [...newStudent.offers];
+//     newOffers[index][field] = value;
+//     setNewStudent({ ...newStudent, offers: newOffers });
+//   };
+
+//   const addNewOfferField = () => {
+//     if (newStudent.offers.length < 3) {
+//       setNewStudent({ ...newStudent, offers: [...newStudent.offers, { company: "", offer_type: "", stipend: "", package: "" }] });
+//     }
+//   };
+
+//   const handleAddStudent = async () => {
+//     const formatted = {
+//       regNo: newStudent.reg_no,
+//       name: newStudent.name,
+//       department: newStudent.department.trim().toUpperCase(), // ✅ Fix applied
+//       status: newStudent.status,
+//       higher_study_college: newStudent.higher_study_college,
+//       higher_study_degree: newStudent.higher_study_degree,
+//       higher_study_country: newStudent.higher_study_country,
+//       firm_name: newStudent.firm_name,
+//       firm_reg_no: newStudent.firm_reg_no,
+//       gst_no: newStudent.gst_no,
+//       role_in_firm: newStudent.role_in_firm,
+//       offers: newStudent.status === "Placed" ? newStudent.offers : []
+//     };
+//     try {
+//       await addStudent(formatted);
+//       await fetchAllStudents();
+//       setDialogOpen(false);
+//     } catch (err) {
+//       alert("Failed to add student: " + (err.response?.data?.error || err.message));
+//     }
+//   };
+
+//   const handleImport = async (e) => {
+//     const file = e.target.files[0];
+//     const sessionID = localStorage.getItem("selectedBatch");
+//     if (!sessionID) return alert("Select a batch first.");
+//     const formData = new FormData();
+//     formData.append("file", file);
+//     formData.append("session_id", sessionID);
+//     try {
+//       await fetch("http://localhost:5001/students/import", {
+//         method: "POST",
+//         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+//         body: formData
+//       });
+//       await fetchAllStudents();
+//     } catch (err) {
+//       alert("Import failed: " + err.message);
+//     }
+//   };
+
+//   const handleExport = () => {
+//     const exportData = [];
+//     filteredStudents.forEach((s, i) => {
+//       const base = {
+//         "S.No": i + 1,
+//         "Reg No": s.regNo,
+//         "Name": s.name,
+//         "Branch": s.department,
+//         "Placement Status": s.status,
+//         "College": s.higher_study_college,
+//         "Degree": s.higher_study_degree,
+//         "Country": s.higher_study_country,
+//         "Firm": s.firm_name,
+//         "Firm Reg No": s.firm_reg_no,
+//         "GST": s.gst_no,
+//         "Role": s.role_in_firm,
+//       };
+//       (s.offers.length ? s.offers : [{}]).forEach((o, j) => {
+//         exportData.push({
+//           ...base,
+//           "Company": o.company || "",
+//           "Offer Type": o.offer_type || "",
+//           "Stipend": o.stipend || "",
+//           "Package": o.package || ""
+//         });
+//       });
+//     });
+//     const ws = XLSX.utils.json_to_sheet(exportData);
+//     const wb = XLSX.utils.book_new();
+//     XLSX.utils.book_append_sheet(wb, ws, "Students");
+//     XLSX.writeFile(wb, "students_export.xlsx");
+//   };
+
+//   return (
+//     <Box>
+//       <Box display="flex" justifyContent="space-between" mb={2}>
+//         <Box display="flex" gap={2}>
+//           <label htmlFor="import-excel">
+//             <input accept=".xlsx, .xls" id="import-excel" type="file" hidden onChange={handleImport} />
+//             <Button variant="outlined" component="span">Import Excel</Button>
+//           </label>
+//           <Button variant="outlined" onClick={handleExport}>Export Excel</Button>
+//         </Box>
+//         <Box display="flex" gap={2}>
+//           <InputBase placeholder="Search by Reg No or Name" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} sx={{ border: "1px solid #ccc", px: 2, borderRadius: 2 }} />
+//           <Button variant="contained" onClick={() => setDialogOpen(true)}>Add Student</Button>
+//         </Box>
+//       </Box>
+
+//       <TableContainer component={Paper}>
+//         <Table>
+//           <TableHead sx={{ backgroundColor: "#ec7000" }}>
+//             <TableRow>
+//               <TableCell>S.No</TableCell>
+//               <TableCell>Reg No</TableCell>
+//               <TableCell>Name</TableCell>
+//               <TableCell>Branch</TableCell>
+//               <TableCell>Placement Status</TableCell>
+//               <TableCell>Company</TableCell>
+//               <TableCell>Offer Type</TableCell>
+//               <TableCell>Stipend</TableCell>
+//               <TableCell>Package</TableCell>
+//             </TableRow>
+//           </TableHead>
+//           <TableBody>
+//             {filteredStudents.map((s, i) => {
+//               return (s.offers.length ? s.offers : [{}]).map((offer, j) => (
+//                 <TableRow key={`${s.regNo}-${j}`}>
+//                   {j === 0 && (
+//                     <>
+//                       <TableCell rowSpan={s.offers.length || 1}>{i + 1}</TableCell>
+//                       <TableCell rowSpan={s.offers.length || 1}>{s.regNo}</TableCell>
+//                       <TableCell rowSpan={s.offers.length || 1}>{s.name}</TableCell>
+//                       <TableCell rowSpan={s.offers.length || 1}>{s.department}</TableCell>
+//                       <TableCell rowSpan={s.offers.length || 1}>
+//                         {s.status}
+//                         {(s.status === "Higher Study" || s.status === "Entrepreneur/Family Business") && (
+//                           <Tooltip title="More Info">
+//                             <IconButton size="small" onClick={() => { setInfoStudent(s); setInfoOpen(true); }}>
+//                               <InfoIcon fontSize="small" />
+//                             </IconButton>
+//                           </Tooltip>
+//                         )}
+//                       </TableCell>
+//                     </>
+//                   )}
+//                   <TableCell>{offer.company || "-"}</TableCell>
+//                   <TableCell>{offer.offer_type || "-"}</TableCell>
+//                   <TableCell>{offer.stipend || "-"}</TableCell>
+//                   <TableCell>{offer.package || "-"}</TableCell>
+//                 </TableRow>
+//               ));
+//             })}
+//           </TableBody>
+//         </Table>
+//       </TableContainer>
+
+//       <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)}>
+//         <DialogTitle>Add New Student</DialogTitle>
+//         <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+//           <TextField name="reg_no" label="Reg No" value={newStudent.reg_no} onChange={handleDialogChange} fullWidth />
+//           <TextField name="name" label="Name" value={newStudent.name} onChange={handleDialogChange} fullWidth />
+//           <TextField name="department" label="Branch" value={newStudent.department} disabled fullWidth />
+//           <TextField select name="status" label="Placement Status" value={newStudent.status} onChange={handleDialogChange} fullWidth>
+//             {statusOptions.map((s) => <MenuItem key={s} value={s}>{s}</MenuItem>)}
+//           </TextField>
+//           {newStudent.status === "Higher Study" && (
+//             <>
+//               <TextField name="higher_study_college" label="College" value={newStudent.higher_study_college} onChange={handleDialogChange} fullWidth />
+//               <TextField name="higher_study_degree" label="Degree" value={newStudent.higher_study_degree} onChange={handleDialogChange} fullWidth />
+//               <TextField name="higher_study_country" label="Country" value={newStudent.higher_study_country} onChange={handleDialogChange} fullWidth />
+//             </>
+//           )}
+//           {newStudent.status === "Entrepreneur/Family Business" && (
+//             <>
+//               <TextField name="firm_name" label="Firm Name" value={newStudent.firm_name} onChange={handleDialogChange} fullWidth />
+//               <TextField name="firm_reg_no" label="Firm Reg No" value={newStudent.firm_reg_no} onChange={handleDialogChange} fullWidth />
+//               <TextField name="gst_no" label="GST No" value={newStudent.gst_no} onChange={handleDialogChange} fullWidth />
+//               <TextField name="role_in_firm" label="Role in Firm" value={newStudent.role_in_firm} onChange={handleDialogChange} fullWidth />
+//             </>
+//           )}
+//           {newStudent.status === "Placed" && newStudent.offers.map((offer, index) => (
+//             <Box key={index} display="flex" flexDirection="column" gap={1}>
+//               <TextField label={`Company ${index + 1}`} value={offer.company} onChange={(e) => handleOfferChange(index, "company", e.target.value)} fullWidth />
+//               <TextField select label="Offer Type" value={offer.offer_type} onChange={(e) => handleOfferChange(index, "offer_type", e.target.value)} fullWidth>
+//                 {offerOptions.map((o) => <MenuItem key={o} value={o}>{o}</MenuItem>)}
+//               </TextField>
+//               <TextField label="Stipend" value={offer.stipend} onChange={(e) => handleOfferChange(index, "stipend", e.target.value)} fullWidth />
+//               <TextField label="Package" value={offer.package} onChange={(e) => handleOfferChange(index, "package", e.target.value)} fullWidth />
+//             </Box>
+//           ))}
+//           {newStudent.status === "Placed" && newStudent.offers.length < 3 && <Button onClick={addNewOfferField}>+ Add Offer</Button>}
+//         </DialogContent>
+//         <DialogActions>
+//           <Button onClick={() => setDialogOpen(false)}>Cancel</Button>
+//           <Button variant="contained" onClick={handleAddStudent}>Add</Button>
+//         </DialogActions>
+//       </Dialog>
+
+//       <Dialog open={infoOpen} onClose={() => setInfoOpen(false)}>
+//         <DialogTitle>Additional Info</DialogTitle>
+//         <DialogContent>
+//           {infoStudent?.status === "Higher Study" && (
+//             <>
+//               <p>College: {infoStudent.higher_study_college}</p>
+//               <p>Degree: {infoStudent.higher_study_degree}</p>
+//               <p>Country: {infoStudent.higher_study_country}</p>
+//             </>
+//           )}
+//           {infoStudent?.status === "Entrepreneur/Family Business" && (
+//             <>
+//               <p>Firm Name: {infoStudent.firm_name}</p>
+//               <p>Firm Reg No: {infoStudent.firm_reg_no}</p>
+//               <p>GST No: {infoStudent.gst_no}</p>
+//               <p>Role: {infoStudent.role_in_firm}</p>
+//             </>
+//           )}
+//         </DialogContent>
+//         <DialogActions>
+//           <Button onClick={() => setInfoOpen(false)}>Close</Button>
+//         </DialogActions>
+//       </Dialog>
+//     </Box>
+//   );
+// };
+
+// // export default PlacementTable;
+// import React, { useEffect, useState } from "react";
+// import {
+//   Box, Button, Dialog, DialogActions, DialogContent, DialogTitle,
+//   Paper, Table, TableBody, TableCell, TableContainer, TableHead,
+//   TableRow, TextField, MenuItem, InputBase, IconButton, Tooltip
+// } from "@mui/material";
+// import InfoIcon from '@mui/icons-material/Info';
+// import { useParams } from "react-router-dom";
+// import * as XLSX from "xlsx";
+// import { usePlacement } from "../MainTable/MainPlacementTable";
+// import { hasPermission } from "../utils/permissions";
+// import { getCurrentUser } from "../utils/user";
+// import { DepartmentMap } from "../constants/departments";
+
+// const statusOptions = ["Placed", "Not Placed", "Higher Study", "Entrepreneur/Family Business"];
+// const offerOptions = ["PPO", "PPO + I", "Intern"];
+
+// const PlacementTable = ({ studentData = [], companyView = null }) => {
+//   const { addStudent, fetchAllStudents } = usePlacement();
+//   const [students, setStudents] = useState([]);
+//   const [filteredStudents, setFilteredStudents] = useState([]);
+//   const [searchQuery, setSearchQuery] = useState("");
+//   const { branch } = useParams();
+//   const shortCode = branch?.trim().toUpperCase() || "";
+//   const fullDept = DepartmentMap[shortCode] || shortCode;
+//   const [dialogOpen, setDialogOpen] = useState(false);
+//   const [infoOpen, setInfoOpen] = useState(false);
+//   const [infoStudent, setInfoStudent] = useState(null);
+
+//   const [newStudent, setNewStudent] = useState({
+//     reg_no: "",
+//     name: "",
+//     department: fullDept,
+//     status: "",
+//     higher_study_college: "",
+//     higher_study_degree: "",
+//     higher_study_country: "",
+//     firm_name: "",
+//     firm_reg_no: "",
+//     gst_no: "",
+//     role_in_firm: "",
+//     offers: [{ company: "", offer_type: "", stipend: "", package: "" }]
+//    });
+
+//   // useEffect(() => {
+//   //   const permitted = studentData.filter(s => hasPermission("view_own_department_students", s.department));
+//   //   setStudents(permitted);
+//   //   setFilteredStudents(permitted);
+//   // }, [studentData]);
+//   useEffect(() => {
+//   // Update department in new student form whenever route branch changes
+//   setNewStudent((prev) => ({
+//     ...prev,
+//     department: fullDept,
+//   }));
+
+//   // Filter students based on department permission
+//   const permitted = studentData.filter(s =>
+//     hasPermission("view_own_department_students", s.department)
+//   );
+//   setStudents(permitted);
+//   setFilteredStudents(permitted);
+// }, [studentData, fullDept]);
+
+
+//   const handleDialogChange = (e) => {
+//     const { name, value } = e.target;
+//     console.log(name, value);
+//     setNewStudent((prev) => ({ ...prev, [name]: value }));
+//   };
+
+//   const handleOfferChange = (index, field, value) => {
+//     const newOffers = [...newStudent.offers];
+//     newOffers[index][field] = value;
+//     setNewStudent({ ...newStudent, offers: newOffers });
+//   };
+
+//   const addNewOfferField = () => {
+//     if (newStudent.offers.length < 3) {
+//       setNewStudent({ ...newStudent, offers: [...newStudent.offers, { company: "", offer_type: "", stipend: "", package: "" }] });
+//     }
+//   };
+
+//   const handleAddStudent = async () => {
+//     console.log("Sending department:", fullDept);
+//     console.log("REGNO sending to backend:", newStudent.reg_no);
+// const formatted = {
+//       regNo: newStudent.reg_no,
+//       name: newStudent.name,
+//      department: newStudent.department, // Already full name
+//      status: newStudent.status,
+//       higher_study_college: newStudent.higher_study_college,
+//       higher_study_degree: newStudent.higher_study_degree,
+//       higher_study_country: newStudent.higher_study_country,
+//       firm_name: newStudent.firm_name,
+//       firm_reg_no: newStudent.firm_reg_no,
+//       gst_no: newStudent.gst_no,
+//       role_in_firm: newStudent.role_in_firm,
+//       offers: newStudent.status === "Placed" ? newStudent.offers : []
+//     };console.log("Payload:", formatted);
+//       console.log("REGNO sending to backend:", newStudent.reg_no);
+//     try {
+//       await addStudent(formatted);
+//       await fetchAllStudents();
+//       setDialogOpen(false);
+//     } catch (err) {
+//       alert("Failed to add student: " + (err.response?.data?.error || err.message));
+//     }
+//   };
+
+//   const handleImport = async (e) => {
+//     const file = e.target.files[0];
+//     const sessionID = localStorage.getItem("selectedBatch");
+//     if (!sessionID) return alert("Select a batch first.");
+//     const formData = new FormData();
+//     formData.append("file", file);
+//     formData.append("session_id", sessionID);
+//     try {
+//       await fetch("http://localhost:5001/students/import", {
+//         method: "POST",
+//         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+//         body: formData
+//       });
+//       await fetchAllStudents();
+//     } catch (err) {
+//       alert("Import failed: " + err.message);
+//     }
+//   };
+
+//   const handleExport = () => {
+//     const exportData = [];
+//     filteredStudents.forEach((s, i) => {
+//       const base = {
+//         "S.No": i + 1,
+//         "Reg No": s.regNo,
+//         "Name": s.name,
+//         "Branch": s.department,
+//         "Placement Status": s.status,
+//         "College": s.higher_study_college,
+//         "Degree": s.higher_study_degree,
+//         "Country": s.higher_study_country,
+//         "Firm": s.firm_name,
+//         "Firm Reg No": s.firm_reg_no,
+//         "GST": s.gst_no,
+//         "Role": s.role_in_firm,
+//       };
+//       (s.offers.length ? s.offers : [{}]).forEach((o, j) => {
+//         exportData.push({
+//           ...base,
+//           "Company": o.company || "",
+//           "Offer Type": o.offer_type || "",
+//           "Stipend": o.stipend || "",
+//           "Package": o.package || ""
+//         });
+//       });
+//     });
+//     const ws = XLSX.utils.json_to_sheet(exportData);
+//     const wb = XLSX.utils.book_new();
+//     XLSX.utils.book_append_sheet(wb, ws, "Students");
+//     XLSX.writeFile(wb, "students_export.xlsx");
+//   };
+
+//   return (
+//     <Box>
+//       <Box display="flex" justifyContent="space-between" mb={2}>
+//         <Box display="flex" gap={2}>
+//           <label htmlFor="import-excel">
+//             <input accept=".xlsx, .xls" id="import-excel" type="file" hidden onChange={handleImport} />
+//             <Button variant="outlined" component="span">Import Excel</Button>
+//           </label>
+//           <Button variant="outlined" onClick={handleExport}>Export Excel</Button>
+//         </Box>
+//         <Box display="flex" gap={2}>
+//           <InputBase placeholder="Search by Reg No or Name" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} sx={{ border: "1px solid #ccc", px: 2, borderRadius: 2 }} />
+//           <Button variant="contained" onClick={() => setDialogOpen(true)}>Add Student</Button>
+//         </Box>
+//       </Box>
+
+//       <TableContainer component={Paper}>
+//         <Table>
+//           <TableHead sx={{ backgroundColor: "#ec7000" }}>
+//             <TableRow>
+//               <TableCell>S.No</TableCell>
+//               <TableCell>Reg No</TableCell>
+//               <TableCell>Name</TableCell>
+//               <TableCell>Branch</TableCell>
+//               <TableCell>Placement Status</TableCell>
+//               <TableCell>Company</TableCell>
+//               <TableCell>Offer Type</TableCell>
+//               <TableCell>Stipend</TableCell>
+//               <TableCell>Package</TableCell>
+//             </TableRow>
+//           </TableHead>
+//           <TableBody>
+//             {filteredStudents.map((s, i) => {
+//               return (s.offers.length ? s.offers : [{}]).map((offer, j) => (
+//                 <TableRow key={`${s.regNo}-${j}`}>
+//                   {j === 0 && (
+//                     <>
+//                       <TableCell rowSpan={s.offers.length || 1}>{i + 1}</TableCell>
+//                       <TableCell rowSpan={s.offers.length || 1}>{s.regNo}</TableCell>
+//                       <TableCell rowSpan={s.offers.length || 1}>{s.name}</TableCell>
+//                       <TableCell rowSpan={s.offers.length || 1}>{s.department}</TableCell>
+//                       <TableCell rowSpan={s.offers.length || 1}>
+//                         {s.status}
+//                         {(s.status === "Higher Study" || s.status === "Entrepreneur/Family Business") && (
+//                           <Tooltip title="More Info">
+//                             <IconButton size="small" onClick={() => { setInfoStudent(s); setInfoOpen(true); }}>
+//                               <InfoIcon fontSize="small" />
+//                             </IconButton>
+//                           </Tooltip>
+//                         )}
+//                       </TableCell>
+//                     </>
+//                   )}
+//                   <TableCell>{offer.company || "-"}</TableCell>
+//                   <TableCell>{offer.offer_type || "-"}</TableCell>
+//                   <TableCell>{offer.stipend || "-"}</TableCell>
+//                   <TableCell>{offer.package || "-"}</TableCell>
+//                 </TableRow>
+//               ));
+//             })}
+//           </TableBody>
+//         </Table>
+//       </TableContainer>
+
+//       <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)}>
+//         <DialogTitle>Add New Student</DialogTitle>
+//         <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+//           <TextField name="reg_no" label="Reg No" value={newStudent.reg_no} onChange={handleDialogChange} fullWidth />
+//           <TextField name="name" label="Name" value={newStudent.name} onChange={handleDialogChange} fullWidth />
+//           <TextField name="department" label="Branch" value={newStudent.department} disabled fullWidth />
+//           <TextField select name="status" label="Placement Status" value={newStudent.status} onChange={handleDialogChange} fullWidth>
+//             {statusOptions.map((s) => <MenuItem key={s} value={s}>{s}</MenuItem>)}
+//           </TextField>
+//           {newStudent.status === "Higher Study" && (
+//             <>
+//               <TextField name="higher_study_college" label="College" value={newStudent.higher_study_college} onChange={handleDialogChange} fullWidth />
+//               <TextField name="higher_study_degree" label="Degree" value={newStudent.higher_study_degree} onChange={handleDialogChange} fullWidth />
+//               <TextField name="higher_study_country" label="Country" value={newStudent.higher_study_country} onChange={handleDialogChange} fullWidth />
+//             </>
+//           )}
+//           {newStudent.status === "Entrepreneur/Family Business" && (
+//             <>
+//               <TextField name="firm_name" label="Firm Name" value={newStudent.firm_name} onChange={handleDialogChange} fullWidth />
+//               <TextField name="firm_reg_no" label="Firm Reg No" value={newStudent.firm_reg_no} onChange={handleDialogChange} fullWidth />
+//               <TextField name="gst_no" label="GST No" value={newStudent.gst_no} onChange={handleDialogChange} fullWidth />
+//               <TextField name="role_in_firm" label="Role in Firm" value={newStudent.role_in_firm} onChange={handleDialogChange} fullWidth />
+//             </>
+//           )}
+//           {newStudent.status === "Placed" && newStudent.offers.map((offer, index) => (
+//             <Box key={index} display="flex" flexDirection="column" gap={1}>
+//               <TextField label={`Company ${index + 1}`} value={offer.company} onChange={(e) => handleOfferChange(index, "company", e.target.value)} fullWidth />
+//               <TextField select label="Offer Type" value={offer.offer_type} onChange={(e) => handleOfferChange(index, "offer_type", e.target.value)} fullWidth>
+//                 {offerOptions.map((o) => <MenuItem key={o} value={o}>{o}</MenuItem>)}
+//               </TextField>
+//               <TextField label="Stipend" value={offer.stipend} onChange={(e) => handleOfferChange(index, "stipend", e.target.value)} fullWidth />
+//               <TextField label="Package" value={offer.package} onChange={(e) => handleOfferChange(index, "package", e.target.value)} fullWidth />
+//             </Box>
+//           ))}
+//           {newStudent.status === "Placed" && newStudent.offers.length < 3 && <Button onClick={addNewOfferField}>+ Add Offer</Button>}
+//         </DialogContent>
+//         <DialogActions>
+//           <Button onClick={() => setDialogOpen(false)}>Cancel</Button>
+//           <Button variant="contained" onClick={handleAddStudent}>Add</Button>
+//         </DialogActions>
+//       </Dialog>
+
+//       <Dialog open={infoOpen} onClose={() => setInfoOpen(false)}>
+//         <DialogTitle>Additional Info</DialogTitle>
+//         <DialogContent>
+//           {infoStudent?.status === "Higher Study" && (
+//             <>
+//               <p>College: {infoStudent.higher_study_college}</p>
+//               <p>Degree: {infoStudent.higher_study_degree}</p>
+//               <p>Country: {infoStudent.higher_study_country}</p>
+//             </>
+//           )}
+//           {infoStudent?.status === "Entrepreneur/Family Business" && (
+//             <>
+//               <p>Firm Name: {infoStudent.firm_name}</p>
+//               <p>Firm Reg No: {infoStudent.firm_reg_no}</p>
+//               <p>GST No: {infoStudent.gst_no}</p>
+//               <p>Role: {infoStudent.role_in_firm}</p>
+//             </>
+//           )}
+//         </DialogContent>
+//         <DialogActions>
+//           <Button onClick={() => setInfoOpen(false)}>Close</Button>
+//         </DialogActions>
+//       </Dialog>
+//     </Box>
+//   );
+// };
+
+// // export default PlacementTable;
+
+// import React, { useEffect, useState } from "react";
+// import {
+//   Box, Button, Dialog, DialogActions, DialogContent, DialogTitle,
+//   Paper, Table, TableBody, TableCell, TableContainer, TableHead,
+//   TableRow, TextField, MenuItem, InputBase, IconButton, Tooltip
+// } from "@mui/material";
+// import InfoIcon from '@mui/icons-material/Info';
+// import { useParams } from "react-router-dom";
+// import * as XLSX from "xlsx";
+// import { usePlacement } from "../MainTable/MainPlacementTable";
+// import { hasPermission } from "../utils/permissions";
+// import { DepartmentMap } from "../constants/departments";
+
+// const statusOptions = ["Placed", "Not Placed", "Higher Study", "Entrepreneur/Family Business"];
+// const offerOptions = ["PPO", "PPO + I", "Intern"];
+
+// const PlacementTable = ({ studentData = [], companyView = null }) => {
+//   const { addStudent, fetchAllStudents } = usePlacement();
+//   const [students, setStudents] = useState([]);
+//   const [filteredStudents, setFilteredStudents] = useState([]);
+//   const [searchQuery, setSearchQuery] = useState("");
+//   const { branch } = useParams();
+//   const shortCode = branch?.trim().toUpperCase() || "";
+//   const fullDept = DepartmentMap[shortCode] || shortCode;
+//   const [dialogOpen, setDialogOpen] = useState(false);
+//   const [infoOpen, setInfoOpen] = useState(false);
+//   const [infoStudent, setInfoStudent] = useState(null);
+
+//   const [newStudent, setNewStudent] = useState({
+//     reg_no: "",
+//     name: "",
+//     department: fullDept,
+//     status: "",
+//     higher_study_college: "",
+//     higher_study_degree: "",
+//     higher_study_country: "",
+//     firm_name: "",
+//     firm_reg_no: "",
+//     gst_no: "",
+//     role_in_firm: "",
+//     offers: [{ company: "", offer_type: "", stipend: "", package: "" }]
+//   });
+
+//   useEffect(() => {
+//     setNewStudent((prev) => ({ ...prev, department: fullDept }));
+//     const permitted = studentData.filter(s => hasPermission("view_own_department_students", s.department));
+//     setStudents(permitted);
+//     setFilteredStudents(permitted);
+//   }, [studentData, fullDept]);
+
+//   const handleDialogChange = (e) => {
+//     const { name, value } = e.target;
+//     setNewStudent((prev) => ({ ...prev, [name]: value }));
+//   };
+
+//   const handleOfferChange = (index, field, value) => {
+//     const newOffers = [...newStudent.offers];
+//     newOffers[index][field] = value;
+//     setNewStudent({ ...newStudent, offers: newOffers });
+//   };
+
+//   const addNewOfferField = () => {
+//     if (newStudent.offers.length < 3) {
+//       setNewStudent({ ...newStudent, offers: [...newStudent.offers, { company: "", offer_type: "", stipend: "", package: "" }] });
+//     }
+//   };
+
+//   const handleAddStudent = async () => {
+//     const formatted = {
+//       regNo: newStudent.reg_no,
+//       name: newStudent.name,
+//       department: newStudent.department,
+//       status: newStudent.status,
+//       higher_study_college: newStudent.higher_study_college,
+//       higher_study_degree: newStudent.higher_study_degree,
+//       higher_study_country: newStudent.higher_study_country,
+//       firm_name: newStudent.firm_name,
+//       firm_reg_no: newStudent.firm_reg_no,
+//       gst_no: newStudent.gst_no,
+//       role_in_firm: newStudent.role_in_firm,
+//       offers: newStudent.status === "Placed" ? newStudent.offers : []
+//     };
+//     try {
+//       await addStudent(formatted);
+//       await fetchAllStudents();
+//       setDialogOpen(false);
+//     } catch (err) {
+//       alert("Failed to add student: " + (err.response?.data?.error || err.message));
+//     }
+//   };
+
+//   const handleImport = async (e) => {
+//     const file = e.target.files[0];
+//     const sessionID = localStorage.getItem("selectedBatch");
+//     if (!sessionID) return alert("Select a batch first.");
+//     const formData = new FormData();
+//     formData.append("file", file);
+//     formData.append("session_id", sessionID);
+//     try {
+//       await fetch("http://localhost:5001/students/import", {
+//         method: "POST",
+//         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+//         body: formData
+//       });
+//       await fetchAllStudents();
+//     } catch (err) {
+//       alert("Import failed: " + err.message);
+//     }
+//   };
+
+//   const handleExport = () => {
+//     const exportData = [];
+//     filteredStudents.forEach((s, i) => {
+//       const base = {
+//         "S.No": i + 1,
+//         "Reg No": s.regNo,
+//         "Name": s.name,
+//         "Branch": s.department,
+//         "Placement Status": s.status,
+//         "College": s.higher_study_college,
+//         "Degree": s.higher_study_degree,
+//         "Country": s.higher_study_country,
+//         "Firm": s.firm_name,
+//         "Firm Reg No": s.firm_reg_no,
+//         "GST": s.gst_no,
+//         "Role": s.role_in_firm,
+//       };
+//       (s.offers.length ? s.offers : [{}]).forEach((o, j) => {
+//         exportData.push({
+//           ...base,
+//           "Company": o.company || "",
+//           "Offer Type": o.offer_type || "",
+//           "Stipend": o.stipend || "",
+//           "Package": o.package || ""
+//         });
+//       });
+//     });
+//     const ws = XLSX.utils.json_to_sheet(exportData);
+//     const wb = XLSX.utils.book_new();
+//     XLSX.utils.book_append_sheet(wb, ws, "Students");
+//     XLSX.writeFile(wb, "students_export.xlsx");
+//   };
+
+//   // ...UI rendering code (as already written)
+
+//   return (
+//     <Box>
+//       <Box display="flex" justifyContent="space-between" mb={2}>
+//         <Box display="flex" gap={2}>
+//           <label htmlFor="import-excel">
+//             <input accept=".xlsx, .xls" id="import-excel" type="file" hidden onChange={handleImport} />
+//             <Button variant="outlined" component="span">Import Excel</Button>
+//           </label>
+//           <Button variant="outlined" onClick={handleExport}>Export Excel</Button>
+//         </Box>
+//         <Box display="flex" gap={2}>
+//           <InputBase placeholder="Search by Reg No or Name" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} sx={{ border: "1px solid #ccc", px: 2, borderRadius: 2 }} />
+//           <Button variant="contained" onClick={() => setDialogOpen(true)}>Add Student</Button>
+//         </Box>
+//       </Box>
+
+//       <TableContainer component={Paper}>
+//         <Table>
+//           <TableHead sx={{ backgroundColor: "#ec7000" }}>
+//             <TableRow>
+//               <TableCell>S.No</TableCell>
+//               <TableCell>Reg No</TableCell>
+//               <TableCell>Name</TableCell>
+//               <TableCell>Branch</TableCell>
+//               <TableCell>Placement Status</TableCell>
+//               <TableCell>Company</TableCell>
+//               <TableCell>Offer Type</TableCell>
+//               <TableCell>Stipend</TableCell>
+//               <TableCell>Package</TableCell>
+//             </TableRow>
+//           </TableHead>
+//           <TableBody>
+//             {filteredStudents.map((s, i) => {
+//               return (s.offers.length ? s.offers : [{}]).map((offer, j) => (
+//                 <TableRow key={`${s.regNo}-${j}`}>
+//                   {j === 0 && (
+//                     <>
+//                       <TableCell rowSpan={s.offers.length || 1}>{i + 1}</TableCell>
+//                       <TableCell rowSpan={s.offers.length || 1}>{s.regNo}</TableCell>
+//                       <TableCell rowSpan={s.offers.length || 1}>{s.name}</TableCell>
+//                       <TableCell rowSpan={s.offers.length || 1}>{s.department}</TableCell>
+//                       <TableCell rowSpan={s.offers.length || 1}>
+//                         {s.status}
+//                         {(s.status === "Higher Study" || s.status === "Entrepreneur/Family Business") && (
+//                           <Tooltip title="More Info">
+//                             <IconButton size="small" onClick={() => { setInfoStudent(s); setInfoOpen(true); }}>
+//                               <InfoIcon fontSize="small" />
+//                             </IconButton>
+//                           </Tooltip>
+//                         )}
+//                       </TableCell>
+//                     </>
+//                   )}
+//                   <TableCell>{offer.company || "-"}</TableCell>
+//                   <TableCell>{offer.offer_type || "-"}</TableCell>
+//                   <TableCell>{offer.stipend || "-"}</TableCell>
+//                   <TableCell>{offer.package || "-"}</TableCell>
+//                 </TableRow>
+//               ));
+//             })}
+//           </TableBody>
+//         </Table>
+//       </TableContainer>
+
+//       <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)}>
+//         <DialogTitle>Add New Student</DialogTitle>
+//         <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+//           <TextField name="reg_no" label="Reg No" value={newStudent.reg_no} onChange={handleDialogChange} fullWidth />
+//           <TextField name="name" label="Name" value={newStudent.name} onChange={handleDialogChange} fullWidth />
+//           <TextField name="department" label="Branch" value={newStudent.department} disabled fullWidth />
+//           <TextField select name="status" label="Placement Status" value={newStudent.status} onChange={handleDialogChange} fullWidth>
+//             {statusOptions.map((s) => <MenuItem key={s} value={s}>{s}</MenuItem>)}
+//           </TextField>
+//           {newStudent.status === "Higher Study" && (
+//             <>
+//               <TextField name="higher_study_college" label="College" value={newStudent.higher_study_college} onChange={handleDialogChange} fullWidth />
+//               <TextField name="higher_study_degree" label="Degree" value={newStudent.higher_study_degree} onChange={handleDialogChange} fullWidth />
+//               <TextField name="higher_study_country" label="Country" value={newStudent.higher_study_country} onChange={handleDialogChange} fullWidth />
+//             </>
+//           )}
+//           {newStudent.status === "Entrepreneur/Family Business" && (
+//             <>
+//               <TextField name="firm_name" label="Firm Name" value={newStudent.firm_name} onChange={handleDialogChange} fullWidth />
+//               <TextField name="firm_reg_no" label="Firm Reg No" value={newStudent.firm_reg_no} onChange={handleDialogChange} fullWidth />
+//               <TextField name="gst_no" label="GST No" value={newStudent.gst_no} onChange={handleDialogChange} fullWidth />
+//               <TextField name="role_in_firm" label="Role in Firm" value={newStudent.role_in_firm} onChange={handleDialogChange} fullWidth />
+//             </>
+//           )}
+//           {newStudent.status === "Placed" && newStudent.offers.map((offer, index) => (
+//             <Box key={index} display="flex" flexDirection="column" gap={1}>
+//               <TextField label={`Company ${index + 1}`} value={offer.company} onChange={(e) => handleOfferChange(index, "company", e.target.value)} fullWidth />
+//               <TextField select label="Offer Type" value={offer.offer_type} onChange={(e) => handleOfferChange(index, "offer_type", e.target.value)} fullWidth>
+//                 {offerOptions.map((o) => <MenuItem key={o} value={o}>{o}</MenuItem>)}
+//               </TextField>
+//               <TextField label="Stipend" value={offer.stipend} onChange={(e) => handleOfferChange(index, "stipend", e.target.value)} fullWidth />
+//               <TextField label="Package" value={offer.package} onChange={(e) => handleOfferChange(index, "package", e.target.value)} fullWidth />
+//             </Box>
+//           ))}
+//           {newStudent.status === "Placed" && newStudent.offers.length < 3 && <Button onClick={addNewOfferField}>+ Add Offer</Button>}
+//         </DialogContent>
+//         <DialogActions>
+//           <Button onClick={() => setDialogOpen(false)}>Cancel</Button>
+//           <Button variant="contained" onClick={handleAddStudent}>Add</Button>
+//         </DialogActions>
+//       </Dialog>
+
+//       <Dialog open={infoOpen} onClose={() => setInfoOpen(false)}>
+//         <DialogTitle>Additional Info</DialogTitle>
+//         <DialogContent>
+//           {infoStudent?.status === "Higher Study" && (
+//             <>
+//               <p>College: {infoStudent.higher_study_college}</p>
+//               <p>Degree: {infoStudent.higher_study_degree}</p>
+//               <p>Country: {infoStudent.higher_study_country}</p>
+//             </>
+//           )}
+//           {infoStudent?.status === "Entrepreneur/Family Business" && (
+//             <>
+//               <p>Firm Name: {infoStudent.firm_name}</p>
+//               <p>Firm Reg No: {infoStudent.firm_reg_no}</p>
+//               <p>GST No: {infoStudent.gst_no}</p>
+//               <p>Role: {infoStudent.role_in_firm}</p>
+//             </>
+//           )}
+//         </DialogContent>
+//         <DialogActions>
+//           <Button onClick={() => setInfoOpen(false)}>Close</Button>
+//         </DialogActions>
+//       </Dialog>
+//     </Box>
+//   );
+// };
+
+// // export default PlacementTable;
+// import React, { useEffect, useState } from "react";
+// import {
+//   Box, Button, Dialog, DialogActions, DialogContent, DialogTitle,
+//   Paper, Table, TableBody, TableCell, TableContainer, TableHead,
+//   TableRow, TextField, MenuItem, InputBase, IconButton, Tooltip
+// } from "@mui/material";
+// import InfoIcon from '@mui/icons-material/Info';
+// import { useParams } from "react-router-dom";
+// import * as XLSX from "xlsx";
+// import { usePlacement } from "../MainTable/MainPlacementTable";
+// import { hasPermission } from "../utils/permissions";
+// import { DepartmentMap } from "../constants/departments";
+
+// const statusOptions = ["Placed", "Not Placed", "Higher Study", "Entrepreneur/Family Business"];
+// const offerOptions = ["PPO", "PPO + I", "Intern"];
+
+// const getRowColor = (status) => {
+//   if (status === "Higher Study") return "#e3f2fd";
+//   if (status === "Entrepreneur/Family Business") return "#e8f5e9";
+//   if (status === "Not Placed") return "#ffebee";
+//   return "#ffffff";
+// };
+
+// const PlacementTable = ({ studentData = [], companyView = null }) => {
+//   const { addStudent, fetchAllStudents } = usePlacement();
+//   const [students, setStudents] = useState([]);
+//   const [filteredStudents, setFilteredStudents] = useState([]);
+//   const [searchQuery, setSearchQuery] = useState("");
+//   const { branch } = useParams();
+//   const shortCode = branch?.trim().toUpperCase() || "";
+//   const fullDept = DepartmentMap[shortCode] || shortCode;
+//   const [dialogOpen, setDialogOpen] = useState(false);
+//   const [infoOpen, setInfoOpen] = useState(false);
+//   const [infoStudent, setInfoStudent] = useState(null);
+
+//   const [newStudent, setNewStudent] = useState({
+//     reg_no: "",
+//     name: "",
+//     department: fullDept,
+//     status: "",
+//     higher_study_college: "",
+//     higher_study_degree: "",
+//     higher_study_country: "",
+//     firm_name: "",
+//     firm_reg_no: "",
+//     gst_no: "",
+//     role_in_firm: "",
+//     offers: [{ company: "", offer_type: "", stipend: "", package: "" }]
+//   });
+
+//   useEffect(() => {
+//     setNewStudent((prev) => ({ ...prev, department: fullDept }));
+//     const permitted = studentData.filter(s => hasPermission("view_own_department_students", s.department));
+//     setStudents(permitted);
+//     setFilteredStudents(permitted);
+//   }, [studentData, fullDept]);
+
+//   const handleDialogChange = (e) => {
+//     const { name, value } = e.target;
+//     setNewStudent((prev) => ({ ...prev, [name]: value }));
+//   };
+
+//   const handleOfferChange = (index, field, value) => {
+//     const newOffers = [...newStudent.offers];
+//     newOffers[index][field] = value;
+//     setNewStudent({ ...newStudent, offers: newOffers });
+//   };
+
+//   const addNewOfferField = () => {
+//     if (newStudent.offers.length < 3) {
+//       setNewStudent({ ...newStudent, offers: [...newStudent.offers, { company: "", offer_type: "", stipend: "", package: "" }] });
+//     }
+//   };
+
+//   const handleAddStudent = async () => {
+//     const formatted = {
+//       regNo: newStudent.reg_no,
+//       name: newStudent.name,
+//       department: newStudent.department,
+//       status: newStudent.status,
+//       higher_study_college: newStudent.higher_study_college,
+//       higher_study_degree: newStudent.higher_study_degree,
+//       higher_study_country: newStudent.higher_study_country,
+//       firm_name: newStudent.firm_name,
+//       firm_reg_no: newStudent.firm_reg_no,
+//       gst_no: newStudent.gst_no,
+//       role_in_firm: newStudent.role_in_firm,
+//       offers: newStudent.status === "Placed" ? newStudent.offers : []
+//     };
+//     try {
+//       await addStudent(formatted);
+//       await fetchAllStudents();
+//       setDialogOpen(false);
+//     } catch (err) {
+//       alert("Failed to add student: " + (err.response?.data?.error || err.message));
+//     }
+//   };
+
+//   const handleImport = async (e) => {
+//     const file = e.target.files[0];
+//     const sessionID = localStorage.getItem("selectedBatch");
+//     if (!sessionID) return alert("Select a batch first.");
+//     const formData = new FormData();
+//     formData.append("file", file);
+//     formData.append("session_id", sessionID);
+//     try {
+//       await fetch("http://localhost:5001/students/import", {
+//         method: "POST",
+//         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+//         body: formData
+//       });
+//       await fetchAllStudents();
+//     } catch (err) {
+//       alert("Import failed: " + err.message);
+//     }
+//   };
+
+//   const handleExport = () => {
+//     const exportData = [];
+//     filteredStudents.forEach((s, i) => {
+//       const base = {
+//         "S.No": i + 1,
+//         "Reg No": s.regNo,
+//         "Name": s.name,
+//         "Branch": s.department,
+//         "Placement Status": s.status,
+//         "College": s.higher_study_college,
+//         "Degree": s.higher_study_degree,
+//         "Country": s.higher_study_country,
+//         "Firm": s.firm_name,
+//         "Firm Reg No": s.firm_reg_no,
+//         "GST": s.gst_no,
+//         "Role": s.role_in_firm,
+//       };
+//       (s.offers.length ? s.offers : [{}]).forEach((o, j) => {
+//         exportData.push({
+//           ...base,
+//           "Company": o.company || "",
+//           "Offer Type": o.offer_type || "",
+//           "Stipend": o.stipend || "",
+//           "Package": o.package || ""
+//         });
+//       });
+//     });
+//     const ws = XLSX.utils.json_to_sheet(exportData);
+//     const wb = XLSX.utils.book_new();
+//     XLSX.utils.book_append_sheet(wb, ws, "Students");
+//     XLSX.writeFile(wb, "students_export.xlsx");
+//   };
+
+//   return (
+//     <Box>
+//       <Box display="flex" justifyContent="space-between" mb={2}>
+//         <Box display="flex" gap={2}>
+//           <label htmlFor="import-excel">
+//             <input accept=".xlsx, .xls" id="import-excel" type="file" hidden onChange={handleImport} />
+//             <Button variant="outlined" component="span">Import Excel</Button>
+//           </label>
+//           <Button variant="outlined" onClick={handleExport}>Export Excel</Button>
+//         </Box>
+//         <Box display="flex" gap={2}>
+//           <InputBase placeholder="Search by Reg No or Name" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} sx={{ border: "1px solid #ccc", px: 2, borderRadius: 2 }} />
+//           <Button variant="contained" onClick={() => setDialogOpen(true)}>Add Student</Button>
+//         </Box>
+//       </Box>
+
+//       <TableContainer component={Paper}>
+//         <Table>
+//           <TableHead sx={{ backgroundColor: "#ec7000" }}>
+//             <TableRow>
+//               <TableCell>S.No</TableCell>
+//               <TableCell>Reg No</TableCell>
+//               <TableCell>Name</TableCell>
+//               <TableCell>Branch</TableCell>
+//               <TableCell>Placement Status</TableCell>
+//               <TableCell>Company</TableCell>
+//               <TableCell>Offer Type</TableCell>
+//               <TableCell>Stipend</TableCell>
+//               <TableCell>Package</TableCell>
+//             </TableRow>
+//           </TableHead>
+//           <TableBody>
+//             {filteredStudents.map((s, i) => {
+//               return (s.offers.length ? s.offers : [{}]).map((offer, j) => (
+//                 <TableRow key={`${s.regNo}-${j}`} sx={{ backgroundColor: getRowColor(s.status) }}>
+//                   {j === 0 && (
+//                     <>
+//                       <TableCell rowSpan={s.offers.length || 1}>{i + 1}</TableCell>
+//                       <TableCell rowSpan={s.offers.length || 1}>{s.regNo}</TableCell>
+//                       <TableCell rowSpan={s.offers.length || 1}>{s.name}</TableCell>
+//                       <TableCell rowSpan={s.offers.length || 1}>{s.department}</TableCell>
+//                       <TableCell rowSpan={s.offers.length || 1}>
+//                         {s.status}
+//                         {(s.status === "Higher Study" || s.status === "Entrepreneur/Family Business") && (
+//                           <Tooltip title="More Info">
+//                             <IconButton size="small" onClick={() => { setInfoStudent(s); setInfoOpen(true); }}>
+//                               <InfoIcon fontSize="small" />
+//                             </IconButton>
+//                           </Tooltip>
+//                         )}
+//                       </TableCell>
+//                     </>
+//                   )}
+//                   <TableCell>{offer.company || "-"}</TableCell>
+//                   <TableCell>{offer.offer_type || "-"}</TableCell>
+//                   <TableCell>{offer.stipend || "-"}</TableCell>
+//                   <TableCell>{offer.package || "-"}</TableCell>
+//                 </TableRow>
+//               ));
+//             })}
+//           </TableBody>
+//         </Table>
+//       </TableContainer>
+
+//       <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)}>
+//         <DialogTitle>Add New Student</DialogTitle>
+//         <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+//           {/* Dialog content remains unchanged */}
+//         </DialogContent>
+//         <DialogActions>
+//           <Button onClick={() => setDialogOpen(false)}>Cancel</Button>
+//           <Button variant="contained" onClick={handleAddStudent}>Add</Button>
+//         </DialogActions>
+//       </Dialog>
+
+//       <Dialog open={infoOpen} onClose={() => setInfoOpen(false)}>
+//         <DialogTitle>Additional Info</DialogTitle>
+//         <DialogContent>
+//           {infoStudent?.status === "Higher Study" && (
+//             <>
+//               <p>College: {infoStudent.higher_study_college}</p>
+//               <p>Degree: {infoStudent.higher_study_degree}</p>
+//               <p>Country: {infoStudent.higher_study_country}</p>
+//             </>
+//           )}
+//           {infoStudent?.status === "Entrepreneur/Family Business" && (
+//             <>
+//               <p>Firm Name: {infoStudent.firm_name}</p>
+//               <p>Firm Reg No: {infoStudent.firm_reg_no}</p>
+//               <p>GST No: {infoStudent.gst_no}</p>
+//               <p>Role: {infoStudent.role_in_firm}</p>
+//             </>
+//           )}
+//         </DialogContent>
+//         <DialogActions>
+//           <Button onClick={() => setInfoOpen(false)}>Close</Button>
+//         </DialogActions>
+//       </Dialog>
+//     </Box>
+//   );
+// };
+
+// export default PlacementTable;
+
+// import React, { useEffect, useState } from "react";
+// import {
+//   Box, Button, Dialog, DialogActions, DialogContent, DialogTitle,
+//   Paper, Table, TableBody, TableCell, TableContainer, TableHead,
+//   TableRow, TextField, MenuItem, InputBase, IconButton, Tooltip
+// } from "@mui/material";
+// import InfoIcon from '@mui/icons-material/Info';
+// import { useParams } from "react-router-dom";
+// import * as XLSX from "xlsx";
+// import { usePlacement } from "../MainTable/MainPlacementTable";
+// import { hasPermission } from "../utils/permissions";
+// import { DepartmentMap } from "../constants/departments";
+
+// const statusOptions = ["Placed", "Not Placed", "Higher Study", "Entrepreneur/Family Business"];
+// const offerOptions = ["PPO", "PPO + I", "Intern"];
+
+// const getRowColor = (status) => {
+//   switch (status) {
+//     case "Higher Study": return "#e3f2fd";
+//     case "Entrepreneur/Family Business": return "#e8f5e9";
+//     case "Not Placed": return "#ffebee";
+//     default: return "#ffffff";
+//   }
+// };
+
+// const PlacementTable = ({ studentData = [], companyView = null }) => {
+//   const { addStudent, fetchAllStudents } = usePlacement();
+//   const [students, setStudents] = useState([]);
+//   const [filteredStudents, setFilteredStudents] = useState([]);
+//   const [searchQuery, setSearchQuery] = useState("");
+//   const { branch } = useParams();
+//   const shortCode = branch?.trim().toUpperCase() || "";
+//   const fullDept = DepartmentMap[shortCode] || shortCode;
+//   const [dialogOpen, setDialogOpen] = useState(false);
+//   const [infoOpen, setInfoOpen] = useState(false);
+//   const [infoStudent, setInfoStudent] = useState(null);
+
+//   const [newStudent, setNewStudent] = useState({
+//     reg_no: "",
+//     name: "",
+//     email: "",
+//     department: fullDept,
+//     status: "",
+//     higher_study_college: "",
+//     higher_study_degree: "",
+//     higher_study_country: "",
+//     firm_name: "",
+//     firm_reg_no: "",
+//     gst_no: "",
+//     role_in_firm: "",
+//     offers: [{ company: "", offer_type: "", stipend: "", package: "" }]
+//   });
+
+//   useEffect(() => {
+//     setNewStudent((prev) => ({ ...prev, department: fullDept }));
+//     const permitted = studentData.filter(s => hasPermission("view_own_department_students", s.department));
+//     setStudents(permitted);
+//     setFilteredStudents(permitted);
+//   }, [studentData, fullDept]);
+
+//   useEffect(() => {
+//     const query = searchQuery.toLowerCase();
+//     setFilteredStudents(students.filter(
+//       s => s.name.toLowerCase().includes(query) || s.regNo.toLowerCase().includes(query)
+//     ));
+//   }, [searchQuery, students]);
+
+//   const handleDialogChange = (e) => {
+//     const { name, value } = e.target;
+//     setNewStudent((prev) => ({ ...prev, [name]: value }));
+//   };
+
+//   const handleOfferChange = (index, field, value) => {
+//     const newOffers = [...newStudent.offers];
+//     newOffers[index][field] = value;
+//     setNewStudent({ ...newStudent, offers: newOffers });
+//   };
+
+//   const addNewOfferField = () => {
+//     if (newStudent.offers.length < 3) {
+//       setNewStudent({ ...newStudent, offers: [...newStudent.offers, { company: "", offer_type: "", stipend: "", package: "" }] });
+//     }
+//   };
+
+//   const handleAddStudent = async () => {
+//     // const formatted = {
+//     //   regNo: newStudent.reg_no,
+//     //   name: newStudent.name,
+//     //   email: newStudent.email,
+//     //   department: newStudent.department,
+//     //   status: newStudent.status,
+//     //   higher_study_college: newStudent.higher_study_college,
+//     //   higher_study_degree: newStudent.higher_study_degree,
+//     //   higher_study_country: newStudent.higher_study_country,
+//     //   firm_name: newStudent.firm_name,
+//     //   firm_reg_no: newStudent.firm_reg_no,
+//     //   gst_no: newStudent.gst_no,
+//     //   role_in_firm: newStudent.role_in_firm,
+//     //   offers: newStudent.status === "Placed" ? newStudent.offers : []
+//     // };
+//     const formatted = {
+//   reg_no: newStudent.reg_no.trim(),
+//   name: newStudent.name.trim(),
+//   email: newStudent.email.trim(),
+//   department: newStudent.department,
+//   status: newStudent.status,
+//   higherStudyCollege: newStudent.higher_study_college,
+//   higherStudyDegree: newStudent.higher_study_degree,
+//   higherStudyCountry: newStudent.higher_study_country,
+//   firmName: newStudent.firm_name,
+//   firmRegNo: newStudent.firm_reg_no,
+//   gstNo: newStudent.gst_no,
+//   roleInFirm: newStudent.role_in_firm,
+//   offers: newStudent.status === "Placed" ? newStudent.offers.map((o) => ({
+//     company: o.company,
+//     offerType: o.offer_type,
+//     stipend: o.stipend,
+//     package: o.package,
+//   })) : [],
+// };
+
+//     try {
+//       await addStudent(formatted);
+//       await fetchAllStudents();
+//       setDialogOpen(false);
+//     } catch (err) {
+//       alert("Failed to add student: " + (err.response?.data?.error || err.message));
+//     }
+//   };
+
+//   const handleImport = async (e) => {
+//     const file = e.target.files[0];
+//     const sessionID = localStorage.getItem("selectedBatch");
+//     if (!sessionID) return alert("Select a batch first.");
+//     const formData = new FormData();
+//     formData.append("file", file);
+//     const selectedBatch = localStorage.getItem("selectedBatch");
+//     formData.append("session_id", selectedBatch);
+//     try {
+//       await fetch("http://localhost:5001/students/import", {
+//         method: "POST",
+//         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+//         body: formData
+//       });
+//       await fetchAllStudents();
+//     } catch (err) {
+//       alert("Import failed: " + err.message);
+//     }
+//   };
+
+//   const handleExport = () => {
+//     const exportData = [];
+//     filteredStudents.forEach((s, i) => {
+//       const base = {
+//         "S.No": i + 1,
+//         "Reg No": s.reg_no,
+//         "Name": s.name,
+//         "Email": s.email,
+//         "Branch": s.department,
+//         "Placement Status": s.status,
+//         "College": s.higher_study_college,
+//         "Degree": s.higher_study_degree,
+//         "Country": s.higher_study_country,
+//         "Firm": s.firm_name,
+//         "Firm Reg No": s.firm_reg_no,
+//         "GST": s.gst_no,
+//         "Role": s.role_in_firm
+//       };
+//       (s.offers.length ? s.offers : [{}]).forEach((o) => {
+//         exportData.push({
+//           ...base,
+//           "Company": o.company || "",
+//           "Offer Type": o.offer_type || "",
+//           "Stipend": o.stipend || "",
+//           "Package": o.package || ""
+//         });
+//       });
+//     });
+//     const ws = XLSX.utils.json_to_sheet(exportData);
+//     const wb = XLSX.utils.book_new();
+//     XLSX.utils.book_append_sheet(wb, ws, "Students");
+//     XLSX.writeFile(wb, "students_export.xlsx");
+//   };
+
+//   return (
+//     <Box>
+//       <Box display="flex" justifyContent="space-between" mb={2}>
+//         <Box display="flex" gap={2}>
+//           <label htmlFor="import-excel">
+//             <input accept=".xlsx, .xls" id="import-excel" type="file" hidden onChange={handleImport} />
+//             <Button variant="outlined" component="span">Import Excel</Button>
+//           </label>
+//           <Button variant="outlined" onClick={handleExport}>Export Excel</Button>
+//         </Box>
+//         <Box display="flex" gap={2}>
+//           <InputBase placeholder="Search by Reg No or Name" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} sx={{ border: "1px solid #ccc", px: 2, borderRadius: 2 }} />
+//           <Button variant="contained" onClick={() => setDialogOpen(true)}>Add Student</Button>
+//         </Box>
+//       </Box>
+
+//       <TableContainer component={Paper}>
+//         <Table>
+//           <TableHead sx={{ backgroundColor: "#ec7000" }}>
+//             <TableRow>
+//               <TableCell>S.No</TableCell>
+//               <TableCell>Reg No</TableCell>
+//               <TableCell>Name</TableCell>
+//               <TableCell>Email</TableCell>
+//               <TableCell>Branch</TableCell>
+//               <TableCell>Placement Status</TableCell>
+//               <TableCell>Company</TableCell>
+//               <TableCell>Offer Type</TableCell>
+//               <TableCell>Stipend</TableCell>
+//               <TableCell>Package</TableCell>
+//             </TableRow>
+//           </TableHead>
+//           <TableBody>
+//             {filteredStudents.map((s, i) => (
+//               (s.offers.length ? s.offers : [{}]).map((offer, j) => (
+//                 <TableRow key={`${s.reg_no}-${j}`} sx={{ backgroundColor: getRowColor(s.status) }}>
+//                   {j === 0 && (
+//                     <>
+//                       <TableCell rowSpan={s.offers.length || 1}>{i + 1}</TableCell>
+//                       <TableCell rowSpan={s.offers.length || 1}>{s.regNo}</TableCell>
+//                       <TableCell rowSpan={s.offers.length || 1}>{s.name}</TableCell>
+//                       <TableCell rowSpan={s.offers.length || 1}>{s.email}</TableCell>
+//                       <TableCell rowSpan={s.offers.length || 1}>{s.department}</TableCell>
+//                       <TableCell rowSpan={s.offers.length || 1}>
+//                         {s.status}
+//                         {(s.status === "Higher Study" || s.status === "Entrepreneur/Family Business") && (
+//                           <Tooltip title="More Info">
+//                             <IconButton size="small" onClick={() => { setInfoStudent(s); setInfoOpen(true); }}>
+//                               <InfoIcon fontSize="small" />
+//                             </IconButton>
+//                           </Tooltip>
+//                         )}
+//                       </TableCell>
+//                     </>
+//                   )}
+//                   <TableCell>{offer.company || "-"}</TableCell>
+//                   <TableCell>{offer.offer_type || "-"}</TableCell>
+//                   <TableCell>{offer.stipend || "-"}</TableCell>
+//                   <TableCell>{offer.package || "-"}</TableCell>
+//                 </TableRow>
+//               ))
+//             ))}
+//           </TableBody>
+//         </Table>
+//       </TableContainer>
+
+//       <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)}>
+//         <DialogTitle>Add New Student</DialogTitle>
+//         <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+//           <TextField label="Reg No" name="reg_no" value={newStudent.reg_no} onChange={handleDialogChange} />
+//           <TextField label="Name" name="name" value={newStudent.name} onChange={handleDialogChange} />
+//           <TextField label="Email" name="email" value={newStudent.email} onChange={handleDialogChange} />
+//           <TextField select label="Status" name="status" value={newStudent.status} onChange={handleDialogChange}>
+//             {statusOptions.map(opt => <MenuItem key={opt} value={opt}>{opt}</MenuItem>)}
+//           </TextField>
+//           {newStudent.status === "Placed" && newStudent.offers.map((offer, i) => (
+//             <Box key={i} display="flex" gap={1}>
+//               <TextField label="Company" value={offer.company} onChange={(e) => handleOfferChange(i, "company", e.target.value)} />
+//               <TextField select label="Offer Type" value={offer.offer_type} onChange={(e) => handleOfferChange(i, "offer_type", e.target.value)}>
+//                 {offerOptions.map(o => <MenuItem key={o} value={o}>{o}</MenuItem>)}
+//               </TextField>
+//               <TextField label="Stipend" value={offer.stipend} onChange={(e) => handleOfferChange(i, "stipend", e.target.value)} />
+//               <TextField label="Package" value={offer.package} onChange={(e) => handleOfferChange(i, "package", e.target.value)} />
+//             </Box>
+//           ))}
+//           {newStudent.status === "Placed" && newStudent.offers.length < 3 && (
+//             <Button onClick={addNewOfferField}>Add Offer</Button>
+//           )}
+//         </DialogContent>
+//         <DialogActions>
+//           <Button onClick={() => setDialogOpen(false)}>Cancel</Button>
+//           <Button variant="contained" onClick={handleAddStudent}>Add</Button>
+//         </DialogActions>
+//       </Dialog>
+
+//       <Dialog open={infoOpen} onClose={() => setInfoOpen(false)}>
+//         <DialogTitle>Additional Info</DialogTitle>
+//         <DialogContent>
+//           {infoStudent?.status === "Higher Study" && (
+//             <>
+//               <p>College: {infoStudent.higher_study_college}</p>
+//               <p>Degree: {infoStudent.higher_study_degree}</p>
+//               <p>Country: {infoStudent.higher_study_country}</p>
+//             </>
+//           )}
+//           {infoStudent?.status === "Entrepreneur/Family Business" && (
+//             <>
+//               <p>Firm Name: {infoStudent.firm_name}</p>
+//               <p>Firm Reg No: {infoStudent.firm_reg_no}</p>
+//               <p>GST No: {infoStudent.gst_no}</p>
+//               <p>Role: {infoStudent.role_in_firm}</p>
+//             </>
+//           )}
+//         </DialogContent>
+//         <DialogActions>
+//           <Button onClick={() => setInfoOpen(false)}>Close</Button>
+//         </DialogActions>
+//       </Dialog>
+//     </Box>
+//   );
+// };
+
+// export default PlacementTable;
+
+// import React, { useEffect, useState } from "react";
+// import {
+//   Box, Button, Dialog, DialogActions, DialogContent, DialogTitle,
+//   Paper, Table, TableBody, TableCell, TableContainer, TableHead,
+//   TableRow, TextField, MenuItem, InputBase, IconButton, Tooltip
+// } from "@mui/material";
+// import InfoIcon from '@mui/icons-material/Info';
+// import { useParams } from "react-router-dom";
+// import * as XLSX from "xlsx";
+// import { usePlacement } from "../MainTable/MainPlacementTable";
+// import { hasPermission } from "../utils/permissions";
+// import { DepartmentMap } from "../constants/departments";
+
+// const statusOptions = ["Placed", "Not Placed", "Higher Study", "Entrepreneur/Family Business"];
+// const offerOptions = ["PPO", "PPO + I", "Intern"];
+
+// const getRowColor = (status) => {
+//   switch (status) {
+//     case "Higher Study": return "#e3f2fd";
+//     case "Entrepreneur/Family Business": return "#e8f5e9";
+//     case "Not Placed": return "#ffebee";
+//     default: return "#ffffff";
+//   }
+// };
+
+// const PlacementTable = ({ studentData = [], companyView = null }) => {
+//   const { addStudent, fetchAllStudents } = usePlacement();
+//   const [students, setStudents] = useState([]);
+//   const [filteredStudents, setFilteredStudents] = useState([]);
+//   const [searchQuery, setSearchQuery] = useState("");
+//   const { branch } = useParams();
+//   const shortCode = branch?.trim().toUpperCase() || "";
+//   const fullDept = DepartmentMap[shortCode] || shortCode;
+//   const [dialogOpen, setDialogOpen] = useState(false);
+//   const [infoOpen, setInfoOpen] = useState(false);
+//   const [infoStudent, setInfoStudent] = useState(null);
+
+//   const [newStudent, setNewStudent] = useState({
+//     reg_no: "",
+//     name: "",
+//     email: "",
+//     department: fullDept,
+//     status: "",
+//     higher_study_college: "",
+//     higher_study_degree: "",
+//     higher_study_country: "",
+//     firm_name: "",
+//     firm_reg_no: "",
+//     gst_no: "",
+//     role_in_firm: "",
+//     offers: [{ company: "", offer_type: "", stipend: "", package: "" }]
+//   });
+
+//   useEffect(() => {
+//     setNewStudent((prev) => ({ ...prev, department: fullDept }));
+//     const permitted = studentData.filter(s => hasPermission("view_own_department_students", s.department));
+//     setStudents(permitted);
+//     setFilteredStudents(permitted);
+//   }, [studentData, fullDept]);
+
+//   useEffect(() => {
+//     const query = searchQuery.toLowerCase();
+//     setFilteredStudents(students.filter(
+//       s => s.name.toLowerCase().includes(query) || s.regNo.toLowerCase().includes(query)
+//     ));
+//   }, [searchQuery, students]);
+
+//   const handleDialogChange = (e) => {
+//     const { name, value } = e.target;
+//     setNewStudent((prev) => ({ ...prev, [name]: value }));
+//   };
+
+//   const handleOfferChange = (index, field, value) => {
+//     const newOffers = [...newStudent.offers];
+//     newOffers[index][field] = value;
+//     setNewStudent({ ...newStudent, offers: newOffers });
+//   };
+
+//   const addNewOfferField = () => {
+//     if (newStudent.offers.length < 3) {
+//       setNewStudent({ ...newStudent, offers: [...newStudent.offers, { company: "", offer_type: "", stipend: "", package: "" }] });
+//     }
+//   };
+
+//   const handleAddStudent = async () => {
+//     // const formatted = {
+//     //   regNo: newStudent.reg_no,
+//     //   name: newStudent.name,
+//     //   email: newStudent.email,
+//     //   department: newStudent.department,
+//     //   status: newStudent.status,
+//     //   higher_study_college: newStudent.higher_study_college,
+//     //   higher_study_degree: newStudent.higher_study_degree,
+//     //   higher_study_country: newStudent.higher_study_country,
+//     //   firm_name: newStudent.firm_name,
+//     //   firm_reg_no: newStudent.firm_reg_no,
+//     //   gst_no: newStudent.gst_no,
+//     //   role_in_firm: newStudent.role_in_firm,
+//     //   offers: newStudent.status === "Placed" ? newStudent.offers : []
+//     // };
+//     const formatted = {
+//   reg_no: newStudent.reg_no.trim(),
+//   name: newStudent.name.trim(),
+//   email: newStudent.email.trim(),
+//   department: newStudent.department,
+//   status: newStudent.status,
+//   higherStudyCollege: newStudent.higher_study_college,
+//   higherStudyDegree: newStudent.higher_study_degree,
+//   higherStudyCountry: newStudent.higher_study_country,
+//   firmName: newStudent.firm_name,
+//   firmRegNo: newStudent.firm_reg_no,
+//   gstNo: newStudent.gst_no,
+//   roleInFirm: newStudent.role_in_firm,
+//   offers: newStudent.status === "Placed" ? newStudent.offers.map((o) => ({
+//     company: o.company,
+//     offerType: o.offer_type,
+//     stipend: o.stipend,
+//     package: o.package,
+//   })) : [],
+// };
+
+//     try {
+//       await addStudent(formatted);
+//       await fetchAllStudents();
+//       setDialogOpen(false);
+//     } catch (err) {
+//       alert("Failed to add student: " + (err.response?.data?.error || err.message));
+//     }
+//   };
+
+//   const handleImport = async (e) => {
+//     const file = e.target.files[0];
+//     const sessionID = localStorage.getItem("selectedBatch");
+//     if (!sessionID) return alert("Select a batch first.");
+//     const formData = new FormData();
+//     formData.append("file", file);
+//     const selectedBatch = localStorage.getItem("selectedBatch");
+//     formData.append("session_id", selectedBatch);
+//     try {
+//       await fetch("http://localhost:5001/students/import", {
+//         method: "POST",
+//         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+//         body: formData
+//       });
+//       await fetchAllStudents();
+//     } catch (err) {
+//       alert("Import failed: " + err.message);
+//     }
+//   };
+
+//   const handleExport = () => {
+//     const exportData = [];
+//     filteredStudents.forEach((s, i) => {
+//       const base = {
+//         "S.No": i + 1,
+//         "Reg No": s.reg_no,
+//         "Name": s.name,
+//         "Email": s.email,
+//         "Branch": s.department,
+//         "Placement Status": s.status,
+//         "College": s.higher_study_college,
+//         "Degree": s.higher_study_degree,
+//         "Country": s.higher_study_country,
+//         "Firm": s.firm_name,
+//         "Firm Reg No": s.firm_reg_no,
+//         "GST": s.gst_no,
+//         "Role": s.role_in_firm
+//       };
+//       (s.offers.length ? s.offers : [{}]).forEach((o) => {
+//         exportData.push({
+//           ...base,
+//           "Company": o.company || "",
+//           "Offer Type": o.offer_type || "",
+//           "Stipend": o.stipend || "",
+//           "Package": o.package || ""
+//         });
+//       });
+//     });
+//     const ws = XLSX.utils.json_to_sheet(exportData);
+//     const wb = XLSX.utils.book_new();
+//     XLSX.utils.book_append_sheet(wb, ws, "Students");
+//     XLSX.writeFile(wb, "students_export.xlsx");
+//   };
+
+//   return (
+//     <Box>
+//       <Box display="flex" justifyContent="space-between" mb={2}>
+//         <Box display="flex" gap={2}>
+//           <label htmlFor="import-excel">
+//             <input accept=".xlsx, .xls" id="import-excel" type="file" hidden onChange={handleImport} />
+//             <Button variant="outlined" component="span">Import Excel</Button>
+//           </label>
+//           <Button variant="outlined" onClick={handleExport}>Export Excel</Button>
+//         </Box>
+//         <Box display="flex" gap={2}>
+//           <InputBase placeholder="Search by Reg No or Name" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} sx={{ border: "1px solid #ccc", px: 2, borderRadius: 2 }} />
+//           <Button variant="contained" onClick={() => setDialogOpen(true)}>Add Student</Button>
+//         </Box>
+//       </Box>
+
+//       <TableContainer component={Paper}>
+//         <Table>
+//           <TableHead sx={{ backgroundColor: "#ec7000" }}>
+//             <TableRow>
+//               <TableCell>S.No</TableCell>
+//               <TableCell>Reg No</TableCell>
+//               <TableCell>Name</TableCell>
+//               <TableCell>Email</TableCell>
+//               <TableCell>Branch</TableCell>
+//               <TableCell>Placement Status</TableCell>
+//               <TableCell>Company</TableCell>
+//               <TableCell>Offer Type</TableCell>
+//               <TableCell>Stipend</TableCell>
+//               <TableCell>Package</TableCell>
+//             </TableRow>
+//           </TableHead>
+//           <TableBody>
+//             {filteredStudents.map((s, i) => (
+//               (s.offers.length ? s.offers : [{}]).map((offer, j) => (
+//                 <TableRow key={`${s.reg_no}-${j}`} sx={{ backgroundColor: getRowColor(s.status) }}>
+//                   {j === 0 && (
+//                     <>
+//                       <TableCell rowSpan={s.offers.length || 1}>{i + 1}</TableCell>
+//                       <TableCell rowSpan={s.offers.length || 1}>{s.regNo}</TableCell>
+//                       <TableCell rowSpan={s.offers.length || 1}>{s.name}</TableCell>
+//                       <TableCell rowSpan={s.offers.length || 1}>{s.email}</TableCell>
+//                       <TableCell rowSpan={s.offers.length || 1}>{s.department}</TableCell>
+//                       <TableCell rowSpan={s.offers.length || 1}>
+//                         {s.status}
+//                         {(s.status === "Higher Study" || s.status === "Entrepreneur/Family Business") && (
+//                           <Tooltip title="More Info">
+//                             <IconButton size="small" onClick={() => { setInfoStudent(s); setInfoOpen(true); }}>
+//                               <InfoIcon fontSize="small" />
+//                             </IconButton>
+//                           </Tooltip>
+//                         )}
+//                       </TableCell>
+//                     </>
+//                   )}
+//                   <TableCell>{offer.company || "-"}</TableCell>
+//                   <TableCell>{offer.offer_type || "-"}</TableCell>
+//                   <TableCell>{offer.stipend || "-"}</TableCell>
+//                   <TableCell>{offer.package || "-"}</TableCell>
+//                 </TableRow>
+//               ))
+//             ))}
+//           </TableBody>
+//         </Table>
+//       </TableContainer>
+
+//       <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)}>
+//         <DialogTitle>Add New Student</DialogTitle>
+//         <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+//           <TextField label="Reg No" name="reg_no" value={newStudent.reg_no} onChange={handleDialogChange} />
+//           <TextField label="Name" name="name" value={newStudent.name} onChange={handleDialogChange} />
+//           <TextField label="Email" name="email" value={newStudent.email} onChange={handleDialogChange} />
+//           <TextField select label="Status" name="status" value={newStudent.status} onChange={handleDialogChange}>
+//             {statusOptions.map(opt => <MenuItem key={opt} value={opt}>{opt}</MenuItem>)}
+//           </TextField>
+//           {newStudent.status === "Placed" && newStudent.offers.map((offer, i) => (
+//             <Box key={i} display="flex" gap={1}>
+//               <TextField label="Company" value={offer.company} onChange={(e) => handleOfferChange(i, "company", e.target.value)} />
+//               <TextField select label="Offer Type" value={offer.offer_type} onChange={(e) => handleOfferChange(i, "offer_type", e.target.value)}>
+//                 {offerOptions.map(o => <MenuItem key={o} value={o}>{o}</MenuItem>)}
+//               </TextField>
+//               <TextField label="Stipend" value={offer.stipend} onChange={(e) => handleOfferChange(i, "stipend", e.target.value)} />
+//               <TextField label="Package" value={offer.package} onChange={(e) => handleOfferChange(i, "package", e.target.value)} />
+//             </Box>
+//           ))}
+//           {newStudent.status === "Placed" && newStudent.offers.length < 3 && (
+//             <Button onClick={addNewOfferField}>Add Offer</Button>
+//           )}
+//         </DialogContent>
+//         <DialogActions>
+//           <Button onClick={() => setDialogOpen(false)}>Cancel</Button>
+//           <Button variant="contained" onClick={handleAddStudent}>Add</Button>
+//         </DialogActions>
+//       </Dialog>
+
+//       <Dialog open={infoOpen} onClose={() => setInfoOpen(false)}>
+//         <DialogTitle>Additional Info</DialogTitle>
+//         <DialogContent>
+//           {infoStudent?.status === "Higher Study" && (
+//             <>
+//               <p>College: {infoStudent.higher_study_college}</p>
+//               <p>Degree: {infoStudent.higher_study_degree}</p>
+//               <p>Country: {infoStudent.higher_study_country}</p>
+//             </>
+//           )}
+//           {infoStudent?.status === "Entrepreneur/Family Business" && (
+//             <>
+//               <p>Firm Name: {infoStudent.firm_name}</p>
+//               <p>Firm Reg No: {infoStudent.firm_reg_no}</p>
+//               <p>GST No: {infoStudent.gst_no}</p>
+//               <p>Role: {infoStudent.role_in_firm}</p>
+//             </>
+//           )}
+//         </DialogContent>
+//         <DialogActions>
+//           <Button onClick={() => setInfoOpen(false)}>Close</Button>
+//         </DialogActions>
+//       </Dialog>
+//     </Box>
+//   );
+// };
+
+// // export default PlacementTable;
+// import React, { useEffect, useState } from "react";
+// import {
+//   Box, Button, Dialog, DialogActions, DialogContent, DialogTitle,
+//   Paper, Table, TableBody, TableCell, TableContainer, TableHead,
+//   TableRow, TextField, MenuItem, InputBase, IconButton, Tooltip
+// } from "@mui/material";
+// import InfoIcon from '@mui/icons-material/Info';
+// import { useParams } from "react-router-dom";
+// import * as XLSX from "xlsx";
+// import { usePlacement } from "../MainTable/MainPlacementTable";
+// import { hasPermission } from "../utils/permissions";
+// import { DepartmentMap } from "../constants/departments";
+
+// const statusOptions = ["Placed", "Not Placed", "Higher Study", "Entrepreneur/Family Business"];
+// const offerOptions = ["PPO", "PPO + I", "Intern"];
+
+// const getRowColor = (status) => {
+//   switch (status) {
+//     case "Higher Study": return "#e3f2fd";
+//     case "Entrepreneur/Family Business": return "#e8f5e9";
+//     case "Not Placed": return "#ffebee";
+//     default: return "#ffffff";
+//   }
+// };
+
+// const PlacementTable = ({ studentData = [], companyView = null }) => {
+//   const { addStudent, fetchAllStudents } = usePlacement();
+//   const [students, setStudents] = useState([]);
+//   const [filteredStudents, setFilteredStudents] = useState([]);
+//   const [searchQuery, setSearchQuery] = useState("");
+//   const { branch } = useParams();
+//   const shortCode = branch?.trim().toUpperCase() || "";
+//   const fullDept = DepartmentMap[shortCode] || shortCode;
+//   const [dialogOpen, setDialogOpen] = useState(false);
+//   const [infoOpen, setInfoOpen] = useState(false);
+//   const [infoStudent, setInfoStudent] = useState(null);
+
+//   const [newStudent, setNewStudent] = useState({
+//     reg_no: "",
+//     name: "",
+//     email: "",
+//     department: shortCode,
+//     status: "",
+//     higher_study_college: "",
+//     higher_study_degree: "",
+//     higher_study_country: "",
+//     firm_name: "",
+//     firm_reg_no: "",
+//     gst_no: "",
+//     role_in_firm: "",
+//     offers: [{ company: "", offer_type: "", stipend: "", package: "" }]
+//   });
+
+//   useEffect(() => {
+//     const permitted = studentData.filter(s => hasPermission("view_own_department_students", s.department));
+//     setStudents(permitted);
+//     setFilteredStudents(permitted);
+//   }, [studentData]);
+
+//   useEffect(() => {
+//     const query = searchQuery.toLowerCase();
+//     setFilteredStudents(students.filter(
+//       s => s.name.toLowerCase().includes(query) || s.reg_no.toLowerCase().includes(query)
+//     ));
+//   }, [searchQuery, students]);
+
+//   const handleDialogChange = (e) => {
+//     const { name, value } = e.target;
+//     setNewStudent((prev) => ({ ...prev, [name]: value }));
+//   };
+
+//   const handleOfferChange = (index, field, value) => {
+//     const newOffers = [...newStudent.offers];
+//     newOffers[index][field] = value;
+//     setNewStudent({ ...newStudent, offers: newOffers });
+//   };
+
+//   const addNewOfferField = () => {
+//     if (newStudent.offers.length < 3) {
+//       setNewStudent({ ...newStudent, offers: [...newStudent.offers, { company: "", offer_type: "", stipend: "", package: "" }] });
+//     }
+//   };
+
+//   const handleAddStudent = async () => {
+//     const formatted = {
+//       reg_no: newStudent.reg_no.trim(),
+//       name: newStudent.name.trim(),
+//       email: newStudent.email.trim(),
+//       department: DepartmentMap[newStudent.department] || newStudent.department,
+//       status: newStudent.status,
+//       higherStudyCollege: newStudent.higher_study_college,
+//       higherStudyDegree: newStudent.higher_study_degree,
+//       higherStudyCountry: newStudent.higher_study_country,
+//       firmName: newStudent.firm_name,
+//       firmRegNo: newStudent.firm_reg_no,
+//       gstNo: newStudent.gst_no,
+//       roleInFirm: newStudent.role_in_firm,
+//       offers: newStudent.status === "Placed" ? newStudent.offers.map((o) => ({
+//         company: o.company,
+//         offerType: o.offer_type,
+//         stipend: o.stipend,
+//         package: o.package,
+//       })) : [],
+//     };
+
+//     try {
+//       await addStudent(formatted);
+//       await fetchAllStudents();
+//       setDialogOpen(false);
+//     } catch (err) {
+//       alert("Failed to add student: " + (err.response?.data?.error || err.message));
+//     }
+//   };
+
+//   const handleImport = async (e) => {
+//     const file = e.target.files[0];
+//     const sessionID = localStorage.getItem("selectedBatch");
+//     if (!sessionID) return alert("Select a batch first.");
+//     const formData = new FormData();
+//     formData.append("file", file);
+//     formData.append("session_id", sessionID);
+//     try {
+//       await fetch("http://localhost:5001/students/import", {
+//         method: "POST",
+//         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+//         body: formData
+//       });
+//       await fetchAllStudents();
+//     } catch (err) {
+//       alert("Import failed: " + err.message);
+//     }
+//   };
+
+//   const handleExport = () => {
+//     const exportData = [];
+//     filteredStudents.forEach((s, i) => {
+//       const base = {
+//         "S.No": i + 1,
+//         "Reg No": s.reg_no,
+//         "Name": s.name,
+//         "Email": s.email,
+//         "Branch": s.department,
+//         "Placement Status": s.status,
+//         "College": s.higher_study_college,
+//         "Degree": s.higher_study_degree,
+//         "Country": s.higher_study_country,
+//         "Firm": s.firm_name,
+//         "Firm Reg No": s.firm_reg_no,
+//         "GST": s.gst_no,
+//         "Role": s.role_in_firm
+//       };
+//       (s.offers.length ? s.offers : [{}]).forEach((o) => {
+//         exportData.push({
+//           ...base,
+//           "Company": o.company || "",
+//           "Offer Type": o.offer_type || "",
+//           "Stipend": o.stipend || "",
+//           "Package": o.package || ""
+//         });
+//       });
+//     });
+//     const ws = XLSX.utils.json_to_sheet(exportData);
+//     const wb = XLSX.utils.book_new();
+//     XLSX.utils.book_append_sheet(wb, ws, "Students");
+//     XLSX.writeFile(wb, "students_export.xlsx");
+//   };
+
+//   return (
+//     <Box>
+//       <Box display="flex" justifyContent="space-between" mb={2}>
+//         <Box display="flex" gap={2}>
+//           <label htmlFor="import-excel">
+//             <input accept=".xlsx, .xls" id="import-excel" type="file" hidden onChange={handleImport} />
+//             <Button variant="outlined" component="span">Import Excel</Button>
+//           </label>
+//           <Button variant="outlined" onClick={handleExport}>Export Excel</Button>
+//         </Box>
+//         <Box display="flex" gap={2}>
+//           <InputBase placeholder="Search by Reg No or Name" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} sx={{ border: "1px solid #ccc", px: 2, borderRadius: 2 }} />
+//           <Button variant="contained" onClick={() => setDialogOpen(true)}>Add Student</Button>
+//         </Box>
+//       </Box>
+
+//       <TableContainer component={Paper}>
+//         <Table>
+//           <TableHead sx={{ backgroundColor: "#ec7000" }}>
+//             <TableRow>
+//               <TableCell>S.No</TableCell>
+//               <TableCell>Reg No</TableCell>
+//               <TableCell>Name</TableCell>
+//               <TableCell>Email</TableCell>
+//               <TableCell>Branch</TableCell>
+//               <TableCell>Placement Status</TableCell>
+//               <TableCell>Company</TableCell>
+//               <TableCell>Offer Type</TableCell>
+//               <TableCell>Stipend</TableCell>
+//               <TableCell>Package</TableCell>
+//             </TableRow>
+//           </TableHead>
+//           <TableBody>
+//             {filteredStudents.map((s, i) => (
+//               (s.offers.length ? s.offers : [{}]).map((offer, j) => (
+//                 <TableRow key={`${s.reg_no}-${j}`} sx={{ backgroundColor: getRowColor(s.status) }}>
+//                   {j === 0 && (
+//                     <>
+//                       <TableCell rowSpan={s.offers.length || 1}>{i + 1}</TableCell>
+//                       <TableCell rowSpan={s.offers.length || 1}>{s.reg_no}</TableCell>
+//                       <TableCell rowSpan={s.offers.length || 1}>{s.name}</TableCell>
+//                       <TableCell rowSpan={s.offers.length || 1}>{s.email}</TableCell>
+//                       <TableCell rowSpan={s.offers.length || 1}>{s.department}</TableCell>
+//                       <TableCell rowSpan={s.offers.length || 1}>
+//                         {s.status}
+//                         {(s.status === "Higher Study" || s.status === "Entrepreneur/Family Business") && (
+//                           <Tooltip title="More Info">
+//                             <IconButton size="small" onClick={() => { setInfoStudent(s); setInfoOpen(true); }}>
+//                               <InfoIcon fontSize="small" />
+//                             </IconButton>
+//                           </Tooltip>
+//                         )}
+//                       </TableCell>
+//                     </>
+//                   )}
+//                   <TableCell>{offer.company || "-"}</TableCell>
+//                   <TableCell>{offer.offer_type || "-"}</TableCell>
+//                   <TableCell>{offer.stipend || "-"}</TableCell>
+//                   <TableCell>{offer.package || "-"}</TableCell>
+//                 </TableRow>
+//               ))
+//             ))}
+//           </TableBody>
+//         </Table>
+//       </TableContainer>
+
+//       <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)}>
+//         <DialogTitle>Add New Student</DialogTitle>
+//         <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+//           <TextField label="Reg No" name="reg_no" value={newStudent.reg_no} onChange={handleDialogChange} />
+//           <TextField label="Name" name="name" value={newStudent.name} onChange={handleDialogChange} />
+//           <TextField label="Email" name="email" value={newStudent.email} onChange={handleDialogChange} />
+//           <TextField select label="Status" name="status" value={newStudent.status} onChange={handleDialogChange}>
+//             {statusOptions.map(opt => <MenuItem key={opt} value={opt}>{opt}</MenuItem>)}
+//           </TextField>
+//           {newStudent.status === "Placed" && newStudent.offers.map((offer, i) => (
+//             <Box key={i} display="flex" gap={1}>
+//               <TextField label="Company" value={offer.company} onChange={(e) => handleOfferChange(i, "company", e.target.value)} />
+//               <TextField select label="Offer Type" value={offer.offer_type} onChange={(e) => handleOfferChange(i, "offer_type", e.target.value)}>
+//                 {offerOptions.map(o => <MenuItem key={o} value={o}>{o}</MenuItem>)}
+//               </TextField>
+//               <TextField label="Stipend" value={offer.stipend} onChange={(e) => handleOfferChange(i, "stipend", e.target.value)} />
+//               <TextField label="Package" value={offer.package} onChange={(e) => handleOfferChange(i, "package", e.target.value)} />
+//             </Box>
+//           ))}
+//           {newStudent.status === "Placed" && newStudent.offers.length < 3 && (
+//             <Button onClick={addNewOfferField}>Add Offer</Button>
+//           )}
+//         </DialogContent>
+//         <DialogActions>
+//           <Button onClick={() => setDialogOpen(false)}>Cancel</Button>
+//           <Button variant="contained" onClick={handleAddStudent}>Add</Button>
+//         </DialogActions>
+//       </Dialog>
+
+//       <Dialog open={infoOpen} onClose={() => setInfoOpen(false)}>
+//         <DialogTitle>Additional Info</DialogTitle>
+//         <DialogContent>
+//           {infoStudent?.status === "Higher Study" && (
+//             <>
+//               <p>College: {infoStudent.higher_study_college}</p>
+//               <p>Degree: {infoStudent.higher_study_degree}</p>
+//               <p>Country: {infoStudent.higher_study_country}</p>
+//             </>
+//           )}
+//           {infoStudent?.status === "Entrepreneur/Family Business" && (
+//             <>
+//               <p>Firm Name: {infoStudent.firm_name}</p>
+//               <p>Firm Reg No: {infoStudent.firm_reg_no}</p>
+//               <p>GST No: {infoStudent.gst_no}</p>
+//               <p>Role: {infoStudent.role_in_firm}</p>
+//             </>
+//           )}
+//         </DialogContent>
+//         <DialogActions>
+//           <Button onClick={() => setInfoOpen(false)}>Close</Button>
+//         </DialogActions>
+//       </Dialog>
+//     </Box>
+//   );
+// };
+
+// export default PlacementTable;
 import React, { useEffect, useState } from "react";
 import {
   Box, Button, Dialog, DialogActions, DialogContent, DialogTitle,
   Paper, Table, TableBody, TableCell, TableContainer, TableHead,
   TableRow, TextField, MenuItem, InputBase, IconButton, Tooltip
 } from "@mui/material";
-import InfoIcon from '@mui/icons-material/Info';
-import { useParams } from "react-router-dom";
+import InfoIcon from "@mui/icons-material/Info";
 import * as XLSX from "xlsx";
 import { usePlacement } from "../MainTable/MainPlacementTable";
-import { hasPermission, getCurrentUser } from "../utils/permissions";
-
+import { useParams } from "react-router-dom";
+import { DepartmentMap } from "../constants/departments";
+import { hasPermission } from "../utils/permissions";
 
 const statusOptions = ["Placed", "Not Placed", "Higher Study", "Entrepreneur/Family Business"];
 const offerOptions = ["PPO", "PPO + I", "Intern"];
 
+const getRowColor = (status) => {
+  switch (status) {
+    case "Higher Study": return "#e3f2fd";
+    case "Entrepreneur/Family Business": return "#e8f5e9";
+    case "Not Placed": return "#ffebee";
+    default: return "#ffffff";
+  }
+};
+
 const PlacementTable = ({ studentData = [], companyView = null }) => {
   const { addStudent, fetchAllStudents } = usePlacement();
-  const [students, setStudents] = useState([]);
-  const [filteredStudents, setFilteredStudents] = useState([]);
-  const [searchQuery, setSearchQuery] = useState("");
   const { branch } = useParams();
+  const shortCode = branch?.toUpperCase() || "";
+  const fullDept = DepartmentMap[shortCode] || shortCode;
+
+  const [students, setStudents] = useState([]);
+  const [filtered, setFiltered] = useState([]);
+  const [search, setSearch] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [infoOpen, setInfoOpen] = useState(false);
   const [infoStudent, setInfoStudent] = useState(null);
@@ -1231,8 +3254,10 @@ const PlacementTable = ({ studentData = [], companyView = null }) => {
   const [newStudent, setNewStudent] = useState({
     reg_no: "",
     name: "",
-    department: branch?.toUpperCase() || "",
+    email: "",
+    department: shortCode,
     status: "",
+    offers: [{ company: "", offer_type: "", stipend: "", package: "" }],
     higher_study_college: "",
     higher_study_degree: "",
     higher_study_country: "",
@@ -1240,60 +3265,71 @@ const PlacementTable = ({ studentData = [], companyView = null }) => {
     firm_reg_no: "",
     gst_no: "",
     role_in_firm: "",
-    offers: [{ company: "", offer_type: "", stipend: "", package: "" }]
   });
 
   useEffect(() => {
     const permitted = studentData.filter(s => hasPermission("view_own_department_students", s.department));
     setStudents(permitted);
-    setFilteredStudents(permitted);
+    setFiltered(permitted);
   }, [studentData]);
+
+  useEffect(() => {
+    const q = search.toLowerCase();
+    setFiltered(students.filter(
+      s => s.name.toLowerCase().includes(q) || s.reg_no.toLowerCase().includes(q)
+    ));
+  }, [search, students]);
 
   const handleDialogChange = (e) => {
     const { name, value } = e.target;
     setNewStudent((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleOfferChange = (index, field, value) => {
+  const handleOfferChange = (i, field, value) => {
     const newOffers = [...newStudent.offers];
-    newOffers[index][field] = value;
-    setNewStudent({ ...newStudent, offers: newOffers });
+    newOffers[i][field] = value;
+    setNewStudent(prev => ({ ...prev, offers: newOffers }));
   };
 
-  const addNewOfferField = () => {
+  const addOffer = () => {
     if (newStudent.offers.length < 3) {
-      setNewStudent({ ...newStudent, offers: [...newStudent.offers, { company: "", offer_type: "", stipend: "", package: "" }] });
+      setNewStudent(prev => ({
+        ...prev,
+        offers: [...prev.offers, { company: "", offer_type: "", stipend: "", package: "" }]
+      }));
     }
   };
 
   const handleAddStudent = async () => {
-    const formatted = {
-      regNo: newStudent.reg_no,
-      name: newStudent.name,
-      department: newStudent.department,
+    const payload = {
+      reg_no: newStudent.reg_no.trim(),
+      name: newStudent.name.trim(),
+      email: newStudent.email.trim(),
+      department: DepartmentMap[newStudent.department] || newStudent.department,
       status: newStudent.status,
-      higher_study_college: newStudent.higher_study_college,
-      higher_study_degree: newStudent.higher_study_degree,
-      higher_study_country: newStudent.higher_study_country,
-      firm_name: newStudent.firm_name,
-      firm_reg_no: newStudent.firm_reg_no,
-      gst_no: newStudent.gst_no,
-      role_in_firm: newStudent.role_in_firm,
-      offers: newStudent.status === "Placed" ? newStudent.offers : []
+      higherStudyCollege: newStudent.higher_study_college || undefined,
+      higherStudyDegree: newStudent.higher_study_degree || undefined,
+      higherStudyCountry: newStudent.higher_study_country || undefined,
+      firmName: newStudent.firm_name || undefined,
+      firmRegNo: newStudent.firm_reg_no || undefined,
+      gstNo: newStudent.gst_no || undefined,
+      roleInFirm: newStudent.role_in_firm || undefined,
+      offers: newStudent.status === "Placed" ? newStudent.offers : [],
     };
+
     try {
-      await addStudent(formatted);
+      await addStudent(payload);
       await fetchAllStudents();
       setDialogOpen(false);
     } catch (err) {
-      alert("Failed to add student: " + (err.response?.data?.error || err.message));
+      alert("Add failed: " + (err.response?.data?.error || err.message));
     }
   };
 
   const handleImport = async (e) => {
     const file = e.target.files[0];
     const sessionID = localStorage.getItem("selectedBatch");
-    if (!sessionID) return alert("Select a batch first.");
+    if (!sessionID) return alert("Please select a batch first.");
     const formData = new FormData();
     formData.append("file", file);
     formData.append("session_id", sessionID);
@@ -1310,12 +3346,13 @@ const PlacementTable = ({ studentData = [], companyView = null }) => {
   };
 
   const handleExport = () => {
-    const exportData = [];
-    filteredStudents.forEach((s, i) => {
+    const rows = [];
+    filtered.forEach((s, i) => {
       const base = {
         "S.No": i + 1,
-        "Reg No": s.regNo,
+        "Reg No": s.reg_no,
         "Name": s.name,
+        "Email": s.email,
         "Branch": s.department,
         "Placement Status": s.status,
         "College": s.higher_study_college,
@@ -1324,10 +3361,10 @@ const PlacementTable = ({ studentData = [], companyView = null }) => {
         "Firm": s.firm_name,
         "Firm Reg No": s.firm_reg_no,
         "GST": s.gst_no,
-        "Role": s.role_in_firm,
+        "Role": s.role_in_firm
       };
-      (s.offers.length ? s.offers : [{}]).forEach((o, j) => {
-        exportData.push({
+      (s.offers.length ? s.offers : [{}]).forEach((o) => {
+        rows.push({
           ...base,
           "Company": o.company || "",
           "Offer Type": o.offer_type || "",
@@ -1336,7 +3373,7 @@ const PlacementTable = ({ studentData = [], companyView = null }) => {
         });
       });
     });
-    const ws = XLSX.utils.json_to_sheet(exportData);
+    const ws = XLSX.utils.json_to_sheet(rows);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Students");
     XLSX.writeFile(wb, "students_export.xlsx");
@@ -1346,14 +3383,19 @@ const PlacementTable = ({ studentData = [], companyView = null }) => {
     <Box>
       <Box display="flex" justifyContent="space-between" mb={2}>
         <Box display="flex" gap={2}>
-          <label htmlFor="import-excel">
-            <input accept=".xlsx, .xls" id="import-excel" type="file" hidden onChange={handleImport} />
-            <Button variant="outlined" component="span">Import Excel</Button>
+          <label htmlFor="import-file">
+            <input type="file" id="import-file" hidden onChange={handleImport} />
+            <Button variant="outlined" component="span">Import</Button>
           </label>
-          <Button variant="outlined" onClick={handleExport}>Export Excel</Button>
+          <Button variant="outlined" onClick={handleExport}>Export</Button>
         </Box>
         <Box display="flex" gap={2}>
-          <InputBase placeholder="Search by Reg No or Name" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} sx={{ border: "1px solid #ccc", px: 2, borderRadius: 2 }} />
+          <InputBase
+            placeholder="Search by Reg No or Name"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            sx={{ border: "1px solid #ccc", px: 2, borderRadius: 2 }}
+          />
           <Button variant="contained" onClick={() => setDialogOpen(true)}>Add Student</Button>
         </Box>
       </Box>
@@ -1365,8 +3407,9 @@ const PlacementTable = ({ studentData = [], companyView = null }) => {
               <TableCell>S.No</TableCell>
               <TableCell>Reg No</TableCell>
               <TableCell>Name</TableCell>
+              <TableCell>Email</TableCell>
               <TableCell>Branch</TableCell>
-              <TableCell>Placement Status</TableCell>
+              <TableCell>Status</TableCell>
               <TableCell>Company</TableCell>
               <TableCell>Offer Type</TableCell>
               <TableCell>Stipend</TableCell>
@@ -1374,73 +3417,79 @@ const PlacementTable = ({ studentData = [], companyView = null }) => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {filteredStudents.map((s, i) => {
-              return (s.offers.length ? s.offers : [{}]).map((offer, j) => (
-                <TableRow key={`${s.regNo}-${j}`}>
+            {filtered.map((s, i) =>
+              (s.offers.length ? s.offers : [{}]).map((o, j) => (
+                <TableRow key={`${s.reg_no}-${j}`} sx={{ backgroundColor: getRowColor(s.status) }}>
                   {j === 0 && (
                     <>
                       <TableCell rowSpan={s.offers.length || 1}>{i + 1}</TableCell>
-                      <TableCell rowSpan={s.offers.length || 1}>{s.regNo}</TableCell>
+                      <TableCell rowSpan={s.offers.length || 1}>{s.reg_no}</TableCell>
                       <TableCell rowSpan={s.offers.length || 1}>{s.name}</TableCell>
+                      <TableCell rowSpan={s.offers.length || 1}>{s.email}</TableCell>
                       <TableCell rowSpan={s.offers.length || 1}>{s.department}</TableCell>
                       <TableCell rowSpan={s.offers.length || 1}>
                         {s.status}
                         {(s.status === "Higher Study" || s.status === "Entrepreneur/Family Business") && (
                           <Tooltip title="More Info">
-                            <IconButton size="small" onClick={() => { setInfoStudent(s); setInfoOpen(true); }}>
-                              <InfoIcon fontSize="small" />
+                            <IconButton onClick={() => { setInfoStudent(s); setInfoOpen(true); }}>
+                              <InfoIcon />
                             </IconButton>
                           </Tooltip>
                         )}
                       </TableCell>
                     </>
                   )}
-                  <TableCell>{offer.company || "-"}</TableCell>
-                  <TableCell>{offer.offer_type || "-"}</TableCell>
-                  <TableCell>{offer.stipend || "-"}</TableCell>
-                  <TableCell>{offer.package || "-"}</TableCell>
+                  <TableCell>{o.company || "-"}</TableCell>
+                  <TableCell>{o.offer_type || "-"}</TableCell>
+                  <TableCell>{o.stipend || "-"}</TableCell>
+                  <TableCell>{o.package || "-"}</TableCell>
                 </TableRow>
-              ));
-            })}
+              ))
+            )}
           </TableBody>
         </Table>
       </TableContainer>
 
-      <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)}>
-        <DialogTitle>Add New Student</DialogTitle>
-        <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-          <TextField name="reg_no" label="Reg No" value={newStudent.reg_no} onChange={handleDialogChange} fullWidth />
-          <TextField name="name" label="Name" value={newStudent.name} onChange={handleDialogChange} fullWidth />
-          <TextField name="department" label="Branch" value={newStudent.department} disabled fullWidth />
-          <TextField select name="status" label="Placement Status" value={newStudent.status} onChange={handleDialogChange} fullWidth>
-            {statusOptions.map((s) => <MenuItem key={s} value={s}>{s}</MenuItem>)}
+      <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="md" fullWidth>
+        <DialogTitle>Add Student</DialogTitle>
+        <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 1 }}>
+          <TextField label="Reg No" name="reg_no" value={newStudent.reg_no} onChange={handleDialogChange} />
+          <TextField label="Name" name="name" value={newStudent.name} onChange={handleDialogChange} />
+          <TextField label="Email" name="email" value={newStudent.email} onChange={handleDialogChange} />
+          <TextField select label="Status" name="status" value={newStudent.status} onChange={handleDialogChange}>
+            {statusOptions.map(opt => <MenuItem key={opt} value={opt}>{opt}</MenuItem>)}
           </TextField>
+
           {newStudent.status === "Higher Study" && (
             <>
-              <TextField name="higher_study_college" label="College" value={newStudent.higher_study_college} onChange={handleDialogChange} fullWidth />
-              <TextField name="higher_study_degree" label="Degree" value={newStudent.higher_study_degree} onChange={handleDialogChange} fullWidth />
-              <TextField name="higher_study_country" label="Country" value={newStudent.higher_study_country} onChange={handleDialogChange} fullWidth />
+              <TextField label="College" name="higher_study_college" value={newStudent.higher_study_college} onChange={handleDialogChange} />
+              <TextField label="Degree" name="higher_study_degree" value={newStudent.higher_study_degree} onChange={handleDialogChange} />
+              <TextField label="Country" name="higher_study_country" value={newStudent.higher_study_country} onChange={handleDialogChange} />
             </>
           )}
+
           {newStudent.status === "Entrepreneur/Family Business" && (
             <>
-              <TextField name="firm_name" label="Firm Name" value={newStudent.firm_name} onChange={handleDialogChange} fullWidth />
-              <TextField name="firm_reg_no" label="Firm Reg No" value={newStudent.firm_reg_no} onChange={handleDialogChange} fullWidth />
-              <TextField name="gst_no" label="GST No" value={newStudent.gst_no} onChange={handleDialogChange} fullWidth />
-              <TextField name="role_in_firm" label="Role in Firm" value={newStudent.role_in_firm} onChange={handleDialogChange} fullWidth />
+              <TextField label="Firm Name" name="firm_name" value={newStudent.firm_name} onChange={handleDialogChange} />
+              <TextField label="Firm Reg No" name="firm_reg_no" value={newStudent.firm_reg_no} onChange={handleDialogChange} />
+              <TextField label="GST No" name="gst_no" value={newStudent.gst_no} onChange={handleDialogChange} />
+              <TextField label="Role in Firm" name="role_in_firm" value={newStudent.role_in_firm} onChange={handleDialogChange} />
             </>
           )}
-          {newStudent.status === "Placed" && newStudent.offers.map((offer, index) => (
-            <Box key={index} display="flex" flexDirection="column" gap={1}>
-              <TextField label={`Company ${index + 1}`} value={offer.company} onChange={(e) => handleOfferChange(index, "company", e.target.value)} fullWidth />
-              <TextField select label="Offer Type" value={offer.offer_type} onChange={(e) => handleOfferChange(index, "offer_type", e.target.value)} fullWidth>
-                {offerOptions.map((o) => <MenuItem key={o} value={o}>{o}</MenuItem>)}
+
+          {newStudent.status === "Placed" && newStudent.offers.map((offer, i) => (
+            <Box key={i} display="flex" gap={1}>
+              <TextField label="Company" value={offer.company} onChange={(e) => handleOfferChange(i, "company", e.target.value)} />
+              <TextField select label="Offer Type" value={offer.offer_type} onChange={(e) => handleOfferChange(i, "offer_type", e.target.value)}>
+                {offerOptions.map(o => <MenuItem key={o} value={o}>{o}</MenuItem>)}
               </TextField>
-              <TextField label="Stipend" value={offer.stipend} onChange={(e) => handleOfferChange(index, "stipend", e.target.value)} fullWidth />
-              <TextField label="Package" value={offer.package} onChange={(e) => handleOfferChange(index, "package", e.target.value)} fullWidth />
+              <TextField label="Stipend" value={offer.stipend} onChange={(e) => handleOfferChange(i, "stipend", e.target.value)} />
+              <TextField label="Package" value={offer.package} onChange={(e) => handleOfferChange(i, "package", e.target.value)} />
             </Box>
           ))}
-          {newStudent.status === "Placed" && newStudent.offers.length < 3 && <Button onClick={addNewOfferField}>+ Add Offer</Button>}
+          {newStudent.status === "Placed" && newStudent.offers.length < 3 && (
+            <Button onClick={addOffer}>Add Offer</Button>
+          )}
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDialogOpen(false)}>Cancel</Button>

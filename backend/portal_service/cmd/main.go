@@ -86,7 +86,6 @@ import (
 	"github.com/joho/godotenv"
 )
 
-
 func main() {err := godotenv.Load("../.env") // ← Load from student_service folder
 	if err != nil {
 		log.Println("Warning: No .env file found. Using system environment variables.")

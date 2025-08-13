@@ -57,13 +57,8 @@ const CompanyDetails = () => {
   useEffect(() => {
     axios
       .get("http://localhost:5002/companies")
-      .then((response) => {
-        // Assuming response.data is directly an array
-        setCompanies(response.data);
-      })
-      .catch((error) => {
-        console.error("Error fetching companies:", error);
-      });
+      .then((response) => setCompanies(response.data))
+      .catch((error) => console.error("Error fetching companies:", error));
   }, []);
 
   return (

@@ -1,0 +1,108 @@
+reg_no: "",
+    name: "",
+    email: "",
+    department: shortCode,
+    status: "",
+    offers: [{ company: "", offer_type: "", stipend: "", package: "" }],
+    higher_study_college: "",
+    higher_study_degree: "",
+    higher_study_country: "",
+    firm_name: "",
+    firm_reg_no: "",
+    gst_no: "",
+    role_in_firm: "",
+  });
+=======
+  const [newStudent, setNewStudent] = useState({
+    reg_no: "",
+    name: "",
+    email: "",
+    mobile_no: "",
+    department: shortCode,
+    status: "",
+    offers: [{ company: "", offer_type: "", stipend: "", package: "" }],
+    higher_study_college: "",
+    higher_study_degree: "",
+    higher_study_country: "",
+    firm_name: "",
+    firm_reg_no: "",
+    gst_no: "",
+    role_in_firm: "",
+  });
+>>>>>>> REPLACE
+
+  const handleAddStudent = async () => {
+    const payload = {
+      reg_no: newStudent.reg_no.trim(),
+      name: newStudent.name.trim(),
+      email: newStudent.email.trim(),
+      department: DepartmentMap[newStudent.department] || newStudent.department,
+      status: newStudent.status,
+      higherStudyCollege: newStudent.higher_study_college || undefined,
+      higherStudyDegree: newStudent.higher_study_degree || undefined,
+      higherStudyCountry: newStudent.higher_study_country || undefined,
+      firmName: newStudent.firm_name || undefined,
+      firmRegNo: newStudent.firm_reg_no || undefined,
+      gstNo: newStudent.gst_no || undefined,
+      roleInFirm: newStudent.role_in_firm || undefined,
+      offers: newStudent.status === "Placed" ? newStudent.offers : [],
+    };
+
+    try {
+      await addStudent(payload);
+      await fetchAllStudents();
+      setDialogOpen(false);
+    } catch (err) {
+      alert("Add failed: " + (err.response?.data?.error || err.message));
+    }
+  };
+
+<<<<<<< SEARCH
+        <TextField label="Reg No" name="reg_no" value={newStudent.reg_no} onChange={handleDialogChange} />
+        <TextField label="Name" name="name" value={newStudent.name} onChange={handleDialogChange} />
+        <TextField label="Email" name="email" value={newStudent.email} onChange={handleDialogChange} />
+        <TextField select label="Status" name="status" value={newStudent.status} onChange={handleDialogChange}>
+          {statusOptions.map(opt => <MenuItem key={opt} value={opt}>{opt}</MenuItem>)}
+        </TextField>
+
+        {newStudent.status === "Higher Study" && (
+          <>
+            <TextField label="College" name="higher_study_college" value={newStudent.higher_study_college} onChange={handleDialogChange} />
+            <TextField label="Degree" name="higher_study_degree" value={newStudent.higher_study_degree} onChange={handleDialogChange} />
+            <TextField label="Country" name="higher_study_country" value={newStudent.higher_study_country} onChange={handleDialogChange} />
+          </>
+        )}
+
+        {newStudent.status === "Entrepreneur/Family Business" && (
+          <>
+            <TextField label="Firm Name" name="firm_name" value={newStudent.firm_name} onChange={handleDialogChange} />
+            <TextField label="Firm Reg No" name="firm_reg_no" value={newStudent.firm_reg_no} onChange={handleDialogChange} />
+            <TextField label="GST No" name="gst_no" value={newStudent.gst_no} onChange={handleDialogChange} />
+            <TextField label="Role in Firm" name="role_in_firm" value={newStudent.role_in_firm} onChange={handleDialogChange} />
+          </>
+        )}
+=======
+        <TextField label="Reg No" name="reg_no" value={newStudent.reg_no} onChange={handleDialogChange} />
+        <TextField label="Name" name="name" value={newStudent.name} onChange={handleDialogChange} />
+        <TextField label="Email" name="email" value={newStudent.email} onChange={handleDialogChange} />
+        <TextField label="Mobile No" name="mobile_no" value={newStudent.mobile_no} onChange={handleDialogChange} />
+        <TextField select label="Status" name="status" value={newStudent.status} onChange={handleDialogChange}>
+          {statusOptions.map(opt => <MenuItem key={opt} value={opt}>{opt}</MenuItem>)}
+        </TextField>
+
+        {newStudent.status === "Higher Study" && (
+          <>
+            <TextField label="College" name="higher_study_college" value={newStudent.higher_study_college} onChange={handleDialogChange} />
+            <TextField label="Degree" name="higher_study_degree" value={newStudent.higher_study_degree} onChange={handleDialogChange} />
+            <TextField label="Country" name="higher_study_country" value={newStudent.higher_study_country} onChange={handleDialogChange} />
+          </>
+        )}
+
+        {newStudent.status === "Entrepreneur/Family Business" && (
+          <>
+            <TextField label="Firm Name" name="firm_name" value={newStudent.firm_name} onChange={handleDialogChange} />
+            <TextField label="Firm Reg No" name="firm_reg_no" value={newStudent.firm_reg_no} onChange={handleDialogChange} />
+            <TextField label="GST No" name="gst_no" value={newStudent.gst_no} onChange={handleDialogChange} />
+            <TextField label="Role in Firm" name="role_in_firm" value={newStudent.role_in_firm} onChange={handleDialogChange} />
+          </>
+        )}

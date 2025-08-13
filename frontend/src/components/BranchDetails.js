@@ -421,7 +421,9 @@ import React, { useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
 import { usePlacement } from "../MainTable/MainPlacementTable";
 import PlacementTable from "./PlacementTable";
-import { hasPermission, getCurrentUser } from "../utils/permissions";
+import { hasPermission } from "../utils/permissions";
+import { getCurrentUser } from "../utils/user";
+
 
 
 const BranchDetails = () => {

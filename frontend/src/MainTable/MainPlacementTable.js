@@ -847,6 +847,11 @@ export const PlacementProvider = ({ children }) => {
   };
 
   const addStudent = async (student) => {
+    // Add session_id if missing, from localStorage
+    if (!student.session_id) {
+      const sessionIDStr = localStorage.getItem("selectedBatch");
+      student.session_id = sessionIDStr ? parseInt(sessionIDStr, 10) : 0;
+    }
     try {
       const response = await axiosInstance.post("/students/", student);
       await fetchAllStudents();
@@ -857,8 +862,8 @@ export const PlacementProvider = ({ children }) => {
     }
   };
 
-  const updateStudentOffers = async (regNo, newOffer) => {
-    const student = allStudents.find((s) => s.regNo === regNo);
+  const updateStudentOffers = async (reg_no, newOffer) => {
+    const student = allStudents.find((s) => s.reg_no === reg_no);
     if (!student) return;
 
     const updatedOffers = [...(student.offers || []), newOffer];
